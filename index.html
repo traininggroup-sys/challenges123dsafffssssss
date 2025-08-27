@@ -1,279 +1,1263 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>مسابقة أعضاء جروب المشتركين للتدريب</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
     <style>
+      :root {
+        --brand: #ff5722;
+        --brand-dark: #e04614;
+        --muted: #6b6b6b;
+        --card: #fff;
+        --success: #20a654;
+        --danger: #d64545;
+      }
+      * {
+        box-sizing: border-box;
+      }
       body {
-        font-family: Tahoma, sans-serif;
+        font-family: "Cairo", sans-serif;
         margin: 0;
-        background: #f9f9f9;
-        text-align: center;
+        background: linear-gradient(180deg, #071426, #0b2b46);
+        color: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 18px;
+      }
+      .app {
+        width: 100%;
+        max-width: 1150px;
+        background: linear-gradient(180deg, #fff, #fafafa);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
       }
       header {
-        background: #007bff;
-        color: white;
-        padding: 20px;
-        font-size: 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: linear-gradient(90deg, var(--brand), #ff8a50);
+        color: #fff;
       }
-      .container {
-        padding: 20px;
-        max-width: 600px;
-        margin: auto;
+      header h1 {
+        margin: 0;
+        font-size: 18px;
       }
-      input,
-      button,
-      select {
-        padding: 10px;
-        margin: 5px;
-        font-size: 16px;
+      header .small {
+        font-size: 13px;
+        opacity: 0.95;
       }
-      button {
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
+
+      main {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 16px;
+        padding: 18px;
       }
-      button:hover {
-        background: #0056b3;
+      @media (max-width: 980px) {
+        main {
+          grid-template-columns: 1fr;
+          padding: 12px;
+        }
+        .aside {
+          order: 2;
+        }
       }
-      #adminPanel {
-        display: none;
-        padding: 10px;
-        background: #eee;
+
+      /* left */
+      .card {
+        background: var(--card);
         border-radius: 10px;
-        margin: 20px 0;
+        padding: 14px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
       }
-      #questions,
-      #waitingScreen,
-      #winnerScreen {
-        display: none;
+      .welcome {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+        padding: 28px;
       }
-      #leaderboard {
-        margin-top: 20px;
-        background: #fff;
+      .input {
         padding: 10px;
         border-radius: 8px;
+        border: 1px solid #eee;
+        width: 280px;
       }
-      .lock {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        font-size: 28px;
+      .btn {
+        background: var(--brand);
+        color: #fff;
+        border: none;
+        padding: 10px 14px;
+        border-radius: 10px;
         cursor: pointer;
+        font-weight: 700;
+      }
+      .btn.ghost {
+        background: transparent;
+        border: 2px solid var(--brand);
+        color: var(--brand);
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      /* quiz */
+      .quiz-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .question {
+        font-size: 20px;
+        margin: 12px 0;
+      }
+      .options {
+        display: grid;
+        gap: 10px;
+      }
+      .option {
+        padding: 12px;
+        border-radius: 10px;
+        background: #fafafa;
+        border: 2px solid transparent;
+        cursor: pointer;
+        font-weight: 700;
+        text-align: center;
+        transition: all 0.16s;
+      }
+      .option:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+      }
+      .option.correct {
+        background: #e8f8ef;
+        border-color: var(--success);
+      }
+      .option.wrong {
+        background: #ffecec;
+        border-color: var(--danger);
+      }
+      .progress {
+        height: 10px;
+        background: #eee;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+      .progress > i {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--brand), #ff8a50);
+        width: 0%;
+      }
+      .timerWrap {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .circle {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        color: var(--brand);
+        background: conic-gradient(var(--brand) 0deg, #eee 0deg);
+      }
+
+      /* aside */
+      .aside .leaders {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .leader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #fff, #fafafa);
+        font-weight: 700;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+      }
+      .rank1 {
+        background: linear-gradient(90deg, #ffd700, #ffcf5b);
+      }
+      .rank2 {
+        background: linear-gradient(90deg, #c0c0c0, #e6e6e6);
+      }
+      .rank3 {
+        background: linear-gradient(90deg, #cd7f32, #e0a67a);
+      }
+      .smallMuted {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      footer {
+        padding: 10px 16px;
+        background: #fff;
+        border-top: 1px solid #f2f2f2;
+        text-align: center;
+        font-size: 13px;
+        color: #333;
+      }
+
+      /* admin trigger & modal */
+      .admin-trigger {
+        position: fixed;
+        left: 12px;
+        bottom: 12px;
+        z-index: 1000;
+        opacity: 0.95;
+        cursor: pointer;
+      }
+      .admin-modal {
+        position: fixed;
+        right: 14px;
+        top: 14px;
+        width: 380px;
+        max-width: calc(100% - 28px);
+        background: #fff;
+        border-radius: 10px;
+        padding: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        display: none;
+        z-index: 1100;
+      }
+      .admin-modal.open {
+        display: block;
+      }
+      .form-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin: 8px 0;
+      }
+      .small-btn {
+        padding: 8px 10px;
+        background: var(--brand);
+        color: #fff;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+      }
+      .close-admin {
+        background: #ddd;
+        color: #111;
+      }
+      .muted-small {
+        font-size: 13px;
+        color: #666;
+      }
+      .celebration {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        z-index: 1200;
+        pointer-events: none;
+      }
+      .celebration .box {
+        background: rgba(255, 255, 255, 0.98);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+      }
+      .celebration h2 {
+        margin: 0;
+        font-size: 22px;
+      }
+      .wait-box {
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      /* small helpers */
+      .badge {
+        background: #eee;
+        padding: 6px 8px;
+        border-radius: 10px;
+      }
+      .hidden {
+        display: none;
       }
     </style>
   </head>
   <body>
-    <header>مسابقة أعضاء جروب المشتركين للتدريب</header>
+    <div class="app" role="application">
+      <header>
+        <div>
+          <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
+          <div class="small muted-small" id="topicLabel">المحور: عام</div>
+        </div>
+        <div class="small muted-small" id="topRightInfo">
+          الحالة: <span id="statusShort">في انتظار</span>
+        </div>
+      </header>
 
-    <div class="container">
-      <div id="welcomeScreen">
-        <h2>أهلاً بكم في المسابقة!</h2>
-        <h3 id="topicLabel"></h3>
-        <input type="text" id="playerName" placeholder="اكتب اسمك" />
-        <button onclick="joinGame()">المشاركة</button>
+      <main>
+        <!-- LEFT -->
+        <section>
+          <!-- Welcome -->
+          <div id="welcomeCard" class="card welcome">
+            <h2>أهلاً بكم في المسابقة!</h2>
+            <p class="meta" id="welcomeMeta">
+              اضغطي المشاركة للدخول. الأدمن يفتح لوحة التحكم من رمز القفل.
+            </p>
+            <input
+              id="nameInput"
+              class="input"
+              placeholder="اكتب اسمك (مثال: محمد)"
+            />
+            <div
+              style="
+                margin-top: 12px;
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                justify-content: center;
+              "
+            >
+              <button id="joinBtn" class="btn">المشاركة</button>
+            </div>
+            <div style="margin-top: 12px" class="meta">
+              متصلين الآن: <span id="playersCount">0</span>
+            </div>
+
+            <div id="waitingForStart" style="margin-top: 14px" class="hidden">
+              <div class="wait-box card">
+                <div id="waitingText">في انتظار اكتمال العدد للمشاركة...</div>
+                <div style="margin-top: 8px" class="meta">
+                  المطلوب: <b id="requiredCount">—</b>
+                </div>
+                <div style="margin-top: 8px" class="progress" aria-hidden>
+                  <i id="waitingProgress"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quiz card -->
+          <div id="quizCard" class="card hidden">
+            <div class="quiz-top">
+              <div style="flex: 1">
+                <div id="progressText" class="smallMuted">سؤال 0 / 0</div>
+                <div id="questionText" class="question">السؤال سيظهر هنا</div>
+                <div id="hint" class="meta"></div>
+                <div class="progress" aria-hidden><i id="progressBar"></i></div>
+              </div>
+              <div class="timerWrap">
+                <div class="circle" id="circleTimer">--</div>
+                <div style="text-align: right">
+                  <div class="smallMuted">الوقت المتبقي للمسابقة</div>
+                  <div
+                    id="timeText"
+                    style="font-weight: 800; color: var(--brand)"
+                  >
+                    --
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="options" class="options" style="margin-top: 12px"></div>
+            <div id="feedback" class="meta" style="margin-top: 10px"></div>
+
+            <div id="doneBox" class="card hidden" style="margin-top: 12px">
+              <div class="wait-box">
+                <div><strong>✅ لقد أنهيت إجابتك.</strong></div>
+                <div class="meta" style="margin-top: 8px">
+                  انتظر بقى باقي زملائك لينتهوا، وبعدها ستظهر النتائج.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT -->
+        <aside class="aside">
+          <div class="card">
+            <h3>الترتيب المباشر</h3>
+            <ol id="leaderList" class="leaders" style="margin-top: 10px"></ol>
+            <div style="margin-top: 12px" class="smallMuted">
+              المتسابقون يظهرون هنا مباشرةً
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 12px">
+            <h3>حالة المسابقة</h3>
+            <div class="smallMuted">
+              الحالة: <b id="statusLabel">في انتظار</b>
+            </div>
+            <div style="margin-top: 6px" class="smallMuted">
+              الوقت الكلي: <b id="totalTimeLabel">—</b>
+            </div>
+            <div style="margin-top: 6px" class="smallMuted">
+              المتصدّر: <b id="topBadge">—</b>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer>© مسابقة أعضاء جروب المشتركين للتدريب</footer>
+    </div>
+
+    <!-- admin trigger (lock icon) -->
+    <div
+      id="adminTrigger"
+      class="admin-trigger"
+      title="فتح لوحة الأدمن"
+      aria-hidden="false"
+      style="z-index: 1200"
+    >
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+        <rect
+          x="3"
+          y="7"
+          width="18"
+          height="13"
+          rx="2"
+          stroke="#fff"
+          stroke-width="1.6"
+        />
+        <path d="M7 7V6a5 5 0 0110 0v1" stroke="#fff" stroke-width="1.6" />
+      </svg>
+    </div>
+
+    <!-- admin modal -->
+    <div id="adminModal" class="admin-modal" aria-hidden="true">
+      <div id="adminLoginBox">
+        <h3>دخول الأدمن</h3>
+        <div class="form-row">
+          <input
+            id="adminUser"
+            placeholder="اسم الأدمن"
+            style="
+              flex: 1;
+              padding: 8px;
+              border: 1px solid #eee;
+              border-radius: 8px;
+            "
+          />
+        </div>
+        <div class="form-row">
+          <input
+            id="adminPass"
+            placeholder="كلمة السر"
+            type="password"
+            style="
+              flex: 1;
+              padding: 8px;
+              border: 1px solid #eee;
+              border-radius: 8px;
+            "
+          />
+        </div>
+        <div class="form-row">
+          <button id="adminLoginBtn" class="small-btn">دخول</button
+          ><button id="adminCloseBtn" class="small-btn close-admin">
+            إغلاق
+          </button>
+        </div>
+        <div id="adminError" style="color: #c00; margin-top: 6px"></div>
       </div>
 
-      <div id="waitingScreen">
-        <h2>لقد أنهيت أسئلتك ✅</h2>
-        <p>من فضلك انتظر باقي زملائك...</p>
-      </div>
+      <div id="adminPanelBox" style="display: none">
+        <h3>لوحة الأدمن</h3>
 
-      <div id="questions"></div>
+        <div class="form-row">
+          <label style="flex: 1"
+            >المحور (topic)<input
+              id="adminTopic"
+              placeholder="مثال: حاسب/انجليزي"
+              style="width: 140px; margin-left: 8px; padding: 6px"
+          /></label>
+        </div>
+        <div class="form-row">
+          <label style="flex: 1"
+            >عدد المطلوب (عدد المشاركين)<input
+              id="adminMax"
+              type="number"
+              min="1"
+              value="5"
+              style="width: 110px; margin-left: 8px; padding: 6px"
+          /></label>
+        </div>
+        <div class="form-row">
+          <label style="flex: 1"
+            >الوقت الكلي (دقايق)<input
+              id="adminDuration"
+              type="number"
+              min="1"
+              value="5"
+              style="width: 110px; margin-left: 8px; padding: 6px"
+          /></label>
+        </div>
 
-      <div id="leaderboard">
-        <h3>الترتيب المباشر</h3>
-        <ul id="ranking"></ul>
-      </div>
+        <div style="display: flex; gap: 8px; margin-top: 8px">
+          <button id="saveSettingsBtn" class="small-btn">حفظ الإعدادات</button>
+          <button id="adminForceStartBtn" class="small-btn">بدء إجباري</button>
+          <button
+            id="adminEndBtn"
+            class="small-btn close-admin"
+            style="background: #c0392b"
+          >
+            إنهاء
+          </button>
+          <button id="adminClearBtn" class="small-btn" style="background: #666">
+            مسح المشاركين
+          </button>
+        </div>
 
-      <div id="winnerScreen">
-        <h2 id="winnerMsg"></h2>
-      </div>
+        <div style="margin-top: 10px">
+          <button
+            id="closePanelBtn"
+            class="small-btn close-admin"
+            style="background: #ddd; color: #111"
+          >
+            Close
+          </button>
+          <button id="downloadCSV" class="small-btn" style="background: #2d7">
+            تحميل النتائج CSV
+          </button>
+        </div>
 
-      <div id="adminPanel">
-        <h3>لوحة التحكم</h3>
-        <label>حدد المحور:</label>
-        <select id="topicSelect">
-          <option value="حاسب">حاسب</option>
-          <option value="إنجليزي">إنجليزي</option>
-          <option value="عام">عام</option></select
-        ><br />
-        <button onclick="startCompetition()">بدء المسابقة</button>
-        <button onclick="closeAdmin()">إغلاق</button>
-        <p>
-          الحالة الحالية: <span id="gameStatus">في انتظار بدء المسابقة</span>
-        </p>
+        <div style="margin-top: 8px" class="muted-small">
+          ملاحظة: تسجيل الأدمن بسيط هنا؛ للتحسين استخدمي Firebase Auth لاحقًا.
+        </div>
       </div>
     </div>
 
-    <div class="lock" onclick="openAdminLogin()">🔒</div>
+    <!-- celebration overlay -->
+    <div
+      id="celebration"
+      class="celebration"
+      style="display: none; pointer-events: none"
+    >
+      <div class="box">
+        <h2 id="winnerText">الفائز: —</h2>
+        <p class="smallMuted">تهانينا! الاحتفال جارٍ...</p>
+      </div>
+    </div>
 
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-      import {
-        getDatabase,
-        ref,
-        set,
-        get,
-        update,
-        onValue,
-      } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    <!-- Firebase compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-      // إعداد Firebase
+    <script>
+      /* ================ CONFIG ================ */
       const firebaseConfig = {
         apiKey: "AIzaSyDOQ1wpof7OhyRRCD_0Of0RY0jggnHmSJ4",
         authDomain: "test-competion.firebaseapp.com",
         databaseURL: "https://test-competion-default-rtdb.firebaseio.com",
         projectId: "test-competion",
-        storageBucket: "test-competion.appspot.com",
+        storageBucket: "test-competion.firebasestorage.app",
         messagingSenderId: "605584028373",
         appId: "1:605584028373:web:9cfc40fad5bf6356dbe85c",
+        measurementId: "G-7WEQBFVEJW",
       };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
 
-      const app = initializeApp(firebaseConfig);
-      const db = getDatabase(app);
+      /* ================ ADMIN CREDENTIALS (simple) ================ */
+      const ADMIN_USER = "Eman";
+      const ADMIN_PASS = "123456";
 
-      let playerName = "";
-      let playerScore = 0;
-      let currentQuestion = 0;
-      const questions = [
-        { q: "2 + 2 = ?", options: ["3", "4", "5"], correct: 1 },
+      /* ================ QUESTIONS (manual) ================ */
+      const QUESTIONS = [
         {
-          q: "عاصمة مصر؟",
-          options: ["القاهرة", "الرياض", "الخرطوم"],
-          correct: 0,
+          q: "ما هي عاصمة مصر؟",
+          opts: ["القاهرة", "الإسكندرية", "الأقصر", "الجيزة"],
+          a: 0,
         },
         {
-          q: "HTML تستخدم في؟",
-          options: ["الطبخ", "البرمجة", "الرسم"],
-          correct: 1,
+          q: "من هو مؤسس شركة مايكروسوفت؟",
+          opts: ["بيل جيتس", "ستيف جوبز", "إيلون ماسك", "مارك زوكربيرج"],
+          a: 0,
+        },
+        { q: "كم عدد قارات العالم؟", opts: ["5", "6", "7", "8"], a: 2 },
+        {
+          q: "أسرع حيوان بري هو؟",
+          opts: ["الفهد", "الأسد", "الظبي", "النمر"],
+          a: 0,
+        },
+        { q: "نتيجة 9 × 6؟", opts: ["54", "45", "63", "56"], a: 0 },
+        {
+          q: "أيّ هذه اللغات لواجهة الويب؟",
+          opts: ["JavaScript", "Python", "C++", "Java"],
+          a: 0,
+        },
+        {
+          q: "أكبر كوكب في المجموعة الشمسية؟",
+          opts: ["المريخ", "المشتري", "زحل", "نيبتون"],
+          a: 1,
+        },
+        {
+          q: "عاصمة السعودية؟",
+          opts: ["الرياض", "جدة", "الدمام", "مكة"],
+          a: 0,
+        },
+        {
+          q: "ما لون السماء يوم صافٍ؟",
+          opts: ["أزرق", "أسود", "أخضر", "أحمر"],
+          a: 0,
+        },
+        {
+          q: "أشهَر محرك بحث؟",
+          opts: ["Bing", "Google", "Yahoo", "DuckDuckGo"],
+          a: 1,
         },
       ];
 
-      // دخول مشارك
-      window.joinGame = async function () {
-        playerName = document.getElementById("playerName").value.trim();
-        if (!playerName) return alert("من فضلك اكتب اسمك");
-        await set(ref(db, "players/" + playerName), {
-          score: 0,
-          finished: false,
-        });
-        document.getElementById("welcomeScreen").style.display = "none";
-        showQuestion();
-      };
+      /* ================ UI refs ================ */
+      const $ = (sel) => document.querySelector(sel);
+      const welcomeCard = $("#welcomeCard");
+      const joinBtn = $("#joinBtn"),
+        nameInput = $("#nameInput"),
+        playersCount = $("#playersCount");
+      const waitingForStart = $("#waitingForStart"),
+        waitingText = $("#waitingText"),
+        requiredCount = $("#requiredCount"),
+        waitingProgress = $("#waitingProgress");
+      const quizCard = $("#quizCard"),
+        optionsWrap = $("#options"),
+        questionText = $("#questionText");
+      const progressBar = $("#progressBar"),
+        progressText = $("#progressText");
+      const circleTimer = $("#circleTimer"),
+        timeText = $("#timeText");
+      const feedback = $("#feedback"),
+        doneBox = $("#doneBox");
+      const leaderList = $("#leaderList"),
+        statusLabel = $("#statusLabel"),
+        statusShort = $("#statusShort"),
+        totalTimeLabel = $("#totalTimeLabel"),
+        topBadge = $("#topBadge"),
+        topicLabel = $("#topicLabel");
+      const adminTrigger = $("#adminTrigger"),
+        adminModal = $("#adminModal"),
+        adminLoginBox = $("#adminLoginBox"),
+        adminPanelBox = $("#adminPanelBox");
+      const adminUser = $("#adminUser"),
+        adminPass = $("#adminPass"),
+        adminLoginBtn = $("#adminLoginBtn"),
+        adminCloseBtn = $("#adminCloseBtn");
+      const adminForceStartBtn = $("#adminForceStartBtn"),
+        adminEndBtn = $("#adminEndBtn"),
+        adminClearBtn = $("#adminClearBtn"),
+        saveSettingsBtn = $("#saveSettingsBtn");
+      const adminDuration = $("#adminDuration"),
+        adminMax = $("#adminMax"),
+        adminTopic = $("#adminTopic"),
+        closePanelBtn = $("#closePanelBtn");
+      const adminModalOpen = () => adminModal.classList.add("open"),
+        adminModalClose = () => adminModal.classList.remove("open");
+      const celebration = $("#celebration"),
+        winnerText = $("#winnerText");
+      const downloadCSV = $("#downloadCSV");
+      const welcomeMeta = $("#welcomeMeta");
 
-      // عرض الأسئلة
-      function showQuestion() {
-        if (currentQuestion >= questions.length) {
-          update(ref(db, "players/" + playerName), {
-            score: playerScore,
-            finished: true,
+      /* ================ State ================ */
+      let playerId = null,
+        playerName = "",
+        localScore = 0,
+        localIndex = 0,
+        shuffled = [],
+        quizEndAt = null;
+      let totalSeconds = 300,
+        maxParticipants = 5,
+        status = "waiting",
+        optionLock = false;
+      let cheerTimer = null,
+        voiceOn = true;
+
+      /* ================ Sounds ================ */
+      const sCorrect = new Audio(
+        "https://cdn.pixabay.com/download/audio/2021/08/04/audio_6a0b0f24c1.mp3?filename=success-fanfare-trumpets-6185.mp3"
+      );
+      const sWrong = new Audio(
+        "https://cdn.pixabay.com/download/audio/2022/03/15/audio_3f0a9a5e17.mp3?filename=wrong-buzzer-6266.mp3"
+      );
+      const sStart = new Audio(
+        "https://cdn.pixabay.com/download/audio/2022/03/15/audio_1d8f3f9f2d.mp3?filename=short-whistle-6096.mp3"
+      );
+      const sEnd = new Audio(
+        "https://cdn.pixabay.com/download/audio/2022/03/15/audio_1b5b8b5a3b.mp3?filename=bell-small-6282.mp3"
+      );
+      const sClap = new Audio(
+        "https://cdn.pixabay.com/download/audio/2021/08/04/audio_6a0b0f24c1.mp3?filename=success-fanfare-trumpets-6185.mp3"
+      );
+
+      /* unlock audio on first meaningful interaction */
+      let audioUnlocked = false;
+      function tryUnlockAudio() {
+        if (audioUnlocked) return;
+        [sCorrect, sWrong, sStart, sEnd, sClap].forEach((a) => {
+          a.muted = false;
+          a.play()
+            .then(() => a.pause())
+            .catch(() => {});
+        });
+        audioUnlocked = true;
+      }
+      document.addEventListener("click", tryUnlockAudio, { once: true });
+
+      /* ================ Firebase refs ================ */
+      const liveRef = db.ref("liveQuiz");
+      const playersRef = db.ref("liveQuiz/players");
+      const resultsRef = db.ref("results"); // store finished rounds
+
+      /* ================ ADMIN modal handlers ================ */
+      adminTrigger.addEventListener("click", () =>
+        adminModal.classList.toggle("open")
+      );
+      adminCloseBtn.addEventListener("click", () =>
+        adminModal.classList.remove("open")
+      );
+
+      adminLoginBtn.addEventListener("click", () => {
+        const u = adminUser.value.trim(),
+          p = adminPass.value.trim();
+        if (u === ADMIN_USER && p === ADMIN_PASS) {
+          adminLoginBox.style.display = "none";
+          adminPanelBox.style.display = "block";
+          adminUser.value = "";
+          adminPass.value = "";
+          $("#adminError").innerText = "";
+        } else {
+          $("#adminError").innerText = "اسم/كلمة غير صحيحة";
+        }
+      });
+      closePanelBtn.addEventListener("click", () => {
+        adminModal.classList.remove("open");
+      });
+
+      saveSettingsBtn.addEventListener("click", async () => {
+        const mins = parseInt(adminDuration.value) || 5;
+        totalSeconds = mins * 60;
+        maxParticipants = parseInt(adminMax.value) || 5;
+        const topic = adminTopic.value.trim() || "عام";
+        await liveRef.update({
+          settings: { totalSeconds, maxParticipants, topic },
+        });
+        totalTimeLabel.innerText = `${Math.round(totalSeconds / 60)} دقائق`;
+        topicLabel.innerText = `المحور: ${topic}`;
+        alert("تم حفظ الإعدادات");
+      });
+
+      // admin forced start (if needed)
+      adminForceStartBtn.addEventListener("click", async () => {
+        // admin can force start
+        const now = Date.now();
+        await liveRef.update({ status: "started", quizStartsAt: now });
+        // compute end time for consistency
+        await liveRef
+          .child("settings")
+          .once("value")
+          .then((snap) => {
+            const set = snap.val() || {};
+            const secs = set.totalSeconds || totalSeconds;
+            liveRef.update({ quizEndAt: now + secs * 1000 });
           });
-          document.getElementById("questions").style.display = "none";
-          document.getElementById("waitingScreen").style.display = "block";
-          checkAllFinished();
+        playStart();
+      });
+
+      // admin end
+      adminEndBtn.addEventListener("click", async () => {
+        await liveRef.update({ status: "ended", endedAt: Date.now() });
+        stopCheer();
+        performFinalization(); // compute results and celebrate
+      });
+
+      // admin clear
+      adminClearBtn.addEventListener("click", async () => {
+        if (!confirm("مسح المشاركين (اختباري)؟")) return;
+        await playersRef.remove();
+        alert("تم المسح");
+      });
+
+      // download CSV
+      downloadCSV.addEventListener("click", async () => {
+        const snap = await playersRef.once("value");
+        const data = snap.val() || {};
+        const rows = [["name", "score"]];
+        Object.values(data).forEach((p) =>
+          rows.push([p.name || "", p.score || 0])
+        );
+        const csv = rows
+          .map((r) =>
+            r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")
+          )
+          .join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `results_${Date.now()}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      /* ================ Joining ================ */
+      joinBtn.addEventListener("click", async () => {
+        tryUnlockAudio();
+        const name =
+          nameInput.value.trim() ||
+          localStorage.getItem("savedName") ||
+          "لاعب_" + Math.floor(Math.random() * 900 + 100);
+        playerName = name;
+        localStorage.setItem("savedName", playerName);
+        // create new push key
+        const key = playersRef.push().key;
+        playerId = key;
+        await db
+          .ref(`liveQuiz/players/${playerId}`)
+          .set({
+            name: playerName,
+            score: 0,
+            currentQuestion: 0,
+            finished: false,
+            joinedAt: Date.now(),
+            leftTab: false,
+          });
+        // on disconnect remove
+        db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
+        // hide welcome; waiting UI will show based on status
+        welcomeCard.style.display = "none";
+        // Ensure UI reflects waiting for start if not started
+      });
+
+      /* ================ Listen players and auto-start when enough join ================ */
+      playersRef.on("value", async (snap) => {
+        const data = snap.val() || {};
+        const arr = Object.entries(data).map(([id, v]) => ({
+          id,
+          name: v.name,
+          score: v.score || 0,
+          finished: !!v.finished,
+        }));
+        playersCount.innerText = arr.length;
+
+        // update waiting progress UI
+        const settingsSnap = await liveRef.child("settings").once("value");
+        const settings = settingsSnap.val() || {};
+        const need = settings.maxParticipants || maxParticipants;
+        requiredCount.innerText = need;
+        const pct = Math.min(100, Math.round((arr.length / need) * 100));
+        waitingProgress.style.width = pct + "%";
+        if (arr.length < need) {
+          waitingForStart.classList.remove("hidden");
+          waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${need}`;
+        } else {
+          waitingForStart.classList.add("hidden");
+        }
+
+        // if enough participants AND status is waiting -> auto-start
+        const liveSnap = await liveRef.once("value");
+        const live = liveSnap.val() || {};
+        const curStatus = live.status || "waiting";
+        if (
+          curStatus === "waiting" &&
+          arr.length >=
+            (live.settings
+              ? live.settings.maxParticipants || maxParticipants
+              : maxParticipants)
+        ) {
+          // start automatically
+          const now = Date.now();
+          await liveRef.update({ status: "started", quizStartsAt: now });
+          // set quizEndAt for consistency
+          const secs =
+            live.settings && live.settings.totalSeconds
+              ? live.settings.totalSeconds
+              : totalSeconds / 1;
+          await liveRef.update({ quizEndAt: now + secs * 1000 });
+          playStart();
+        }
+
+        // if status started and everyone finished -> end automatically (handled elsewhere too)
+        const cur = (await liveRef.once("value")).val() || {};
+        if (cur.status === "started") {
+          const allFinished =
+            arr.length > 0 && arr.every((p) => p.finished === true);
+          if (allFinished) {
+            await liveRef.update({ status: "ended", endedAt: Date.now() });
+            stopCheer();
+            performFinalization();
+          }
+        }
+      });
+
+      /* ================ Live status listener ================ */
+      liveRef.on("value", (snap) => {
+        const data = snap.val() || {};
+        status = data.status || "waiting";
+        const settings = data.settings || {};
+        if (settings.totalSeconds) totalSeconds = settings.totalSeconds;
+        if (settings.maxParticipants)
+          maxParticipants = settings.maxParticipants;
+        if (settings.topic)
+          (adminTopic.value = settings.topic),
+            (topicLabel.innerText = `المحور: ${settings.topic}`);
+        statusLabel.innerText = translateStatus(status);
+        statusShort.innerText = translateStatusShort(status);
+        totalTimeLabel.innerText = `${Math.round(totalSeconds / 60)} دقائق`;
+        // when started:
+        if (status === "started") {
+          // calculate quizEndAt
+          const endAt =
+            data.quizEndAt ||
+            (data.quizStartsAt || Date.now()) + totalSeconds * 1000;
+          quizEndAt = endAt;
+          // if player is joined, enter quiz
+          if (playerId) {
+            enterQuiz();
+          }
+          // start cheering (speech) for everyone
+          startCheer();
+        }
+        if (status === "ended") {
+          // finalize and show celebration
+          stopCheer();
+          performFinalization();
+        }
+      });
+
+      /* ================ Enter quiz & resume ================ */
+      async function enterQuiz() {
+        // load player data
+        const snap = await db.ref(`liveQuiz/players/${playerId}`).once("value");
+        const v = snap.val() || {};
+        localScore = v.score || 0;
+        localIndex = v.currentQuestion || 0;
+        // shuffle per client (or could be stored server-side for consistent order)
+        shuffled = shuffleArray(QUESTIONS);
+        // show quiz
+        quizCard.classList.remove("hidden");
+        welcomeCard.style.display = "none";
+        doneBox.classList.add("hidden");
+        startGlobalTimer();
+        renderQuestion();
+        attachLeaderboardListener();
+      }
+
+      /* ================ Timer & UI update ================ */
+      let globalTimer = null;
+      function startGlobalTimer() {
+        clearInterval(globalTimer);
+        if (!quizEndAt) quizEndAt = Date.now() + totalSeconds * 1000;
+        globalTimer = setInterval(() => {
+          const remainMs = Math.max(0, quizEndAt - Date.now());
+          const remainSec = Math.ceil(remainMs / 1000);
+          const m = Math.floor(remainSec / 60),
+            s = remainSec % 60;
+          timeText.innerText = `${m}:${s.toString().padStart(2, "0")}`;
+          // circle
+          const elapsed = Math.max(0, totalSeconds * 1000 - remainMs);
+          const pct = Math.min(
+            100,
+            Math.round((elapsed / (totalSeconds * 1000)) * 100)
+          );
+          circleTimer.style.background = `conic-gradient(var(--brand) ${
+            pct * 3.6
+          }deg, #eee ${pct * 3.6}deg)`;
+          circleTimer.innerText = remainSec;
+          // progress text
+          progressText.innerText = `سؤال ${Math.min(
+            localIndex + 1,
+            QUESTIONS.length
+          )} / ${QUESTIONS.length}`;
+          progressBar.style.width = `${Math.round(
+            (localIndex / QUESTIONS.length) * 100
+          )}%`;
+          if (remainSec <= 0) {
+            clearInterval(globalTimer);
+            // finish local and set ended globally (if admin force)
+            if (playerId)
+              db.ref(`liveQuiz/players/${playerId}`).update({ finished: true });
+            // mark global end if not already
+            liveRef.update({ status: "ended", endedAt: Date.now() });
+          }
+        }, 500);
+      }
+
+      /* ================ Render question & answer ================ */
+      function renderQuestion() {
+        feedback.innerText = "";
+        doneBox.classList.add("hidden");
+        if (localIndex >= shuffled.length) {
+          finishLocal();
           return;
         }
-        let q = questions[currentQuestion];
-        let html = `<h3>${q.q}</h3>`;
-        q.options.forEach((opt, i) => {
-          html += `<button onclick="answer(${i})">${opt}</button><br>`;
-        });
-        document.getElementById("questions").innerHTML = html;
-        document.getElementById("questions").style.display = "block";
-      }
-
-      // الإجابة
-      window.answer = function (i) {
-        if (i === questions[currentQuestion].correct) playerScore++;
-        currentQuestion++;
-        showQuestion();
-      };
-
-      // متابعة الترتيب
-      const rankingRef = ref(db, "players");
-      onValue(rankingRef, (snap) => {
-        const data = snap.val() || {};
-        let arr = Object.entries(data).map(([name, v]) => ({
-          name,
-          score: v.score,
-        }));
-        arr.sort((a, b) => b.score - a.score);
-        document.getElementById("ranking").innerHTML = arr
-          .map((p) => `<li>${p.name}: ${p.score}</li>`)
-          .join("");
-      });
-
-      // لو كلهم خلصوا
-      function checkAllFinished() {
-        get(rankingRef).then((snap) => {
-          const data = snap.val() || {};
-          if (
-            Object.values(data).length &&
-            Object.values(data).every((p) => p.finished)
-          ) {
-            update(ref(db, "game"), { status: "ended" });
-            showWinner(data);
-          }
+        const q = shuffled[localIndex];
+        questionText.innerText = q.q;
+        optionsWrap.innerHTML = "";
+        const opts = shuffleArray(q.opts.map((o, i) => ({ o, i })));
+        opts.forEach((it) => {
+          const div = document.createElement("div");
+          div.className = "option";
+          div.innerText = it.o;
+          div.onclick = () => {
+            if (optionLock) return;
+            optionLock = true;
+            handleAnswer(it.i, div);
+          };
+          optionsWrap.appendChild(div);
         });
       }
 
-      // إعلان الفائز
-      function showWinner(data) {
-        let arr = Object.entries(data).map(([n, v]) => ({
-          name: n,
-          score: v.score,
-        }));
-        arr.sort((a, b) => b.score - a.score);
-        let top = arr[0];
-        document.getElementById(
-          "winnerMsg"
-        ).innerText = `🎉 الفائز هو ${top.name} بدرجة ${top.score}!`;
-        document.getElementById("winnerScreen").style.display = "block";
-        confetti();
-        setTimeout(() => location.reload(), 10000); // بعد 10 ثواني يرجع للصفحة الأولى
-      }
-
-      // لوحة الأدمن
-      window.openAdminLogin = function () {
-        let pass = prompt("ادخل كلمة السر:");
-        if (pass === "admin123") {
-          document.getElementById("adminPanel").style.display = "block";
+      async function handleAnswer(chosenIndex, btn) {
+        const q = shuffled[localIndex];
+        const real = q.a;
+        if (chosenIndex === real) {
+          btn.classList.add("correct");
+          feedback.innerText = "إجابة صحيحة ✅";
+          localScore++;
+          sCorrect.play().catch(() => {});
+        } else {
+          btn.classList.add("wrong");
+          feedback.innerText = `خطأ ❌ الإجابة الصحيحة: ${q.opts[real]}`;
+          sWrong.play().catch(() => {});
+          // highlight correct
+          Array.from(optionsWrap.children).forEach((c) => {
+            if (c.innerText === q.opts[real]) c.classList.add("correct");
+          });
         }
-      };
-      window.closeAdmin = function () {
-        document.getElementById("adminPanel").style.display = "none";
-      };
-      window.startCompetition = function () {
-        let topic = document.getElementById("topicSelect").value;
-        set(ref(db, "game"), { status: "running", topic });
-        document.getElementById("gameStatus").innerText = "المسابقة جارية";
-        document.getElementById("topicLabel").innerText = "المسابقة: " + topic;
-      };
+        // update DB once per answer
+        await db
+          .ref(`liveQuiz/players/${playerId}`)
+          .update({ score: localScore, currentQuestion: localIndex + 1 });
+        localIndex++;
+        setTimeout(() => {
+          optionLock = false;
+          if (Date.now() < quizEndAt) renderQuestion();
+          else finishLocal();
+        }, 900);
+      }
 
-      // متابعة حالة اللعبة
-      const gameRef = ref(db, "game");
-      onValue(gameRef, (snap) => {
-        let g = snap.val();
-        if (!g) return;
-        let status = g.status;
-        if (status === "waiting")
-          document.getElementById("gameStatus").innerText =
-            "في انتظار بدء المسابقة";
-        if (status === "running")
-          document.getElementById("gameStatus").innerText = "المسابقة جارية";
-        if (status === "ended")
-          document.getElementById("gameStatus").innerText = "انتهت المسابقة";
-        if (g.topic)
-          document.getElementById("topicLabel").innerText =
-            "المسابقة: " + g.topic;
+      /* ================ Finish local & wait for others ================ */
+      function finishLocal() {
+        feedback.innerText = "انتهيت — انتظر النتائج النهائية";
+        optionsWrap.innerHTML = "";
+        doneBox.classList.remove("hidden");
+        // mark finished in DB
+        if (playerId)
+          db.ref(`liveQuiz/players/${playerId}`).update({ finished: true });
+      }
+
+      /* ================ Leaderboard listener ================ */
+      let leaderDetach = null;
+      function attachLeaderboardListener() {
+        if (leaderDetach) return;
+        leaderDetach = playersRef.on("value", (snap) => {
+          const data = snap.val() || {};
+          const arr = Object.entries(data).map(([id, v]) => ({
+            id,
+            name: v.name || "لاعب",
+            score: v.score || 0,
+          }));
+          arr.sort((a, b) => b.score - a.score);
+          leaderList.innerHTML = "";
+          arr.forEach((p, i) => {
+            const li = document.createElement("li");
+            li.className = "leader";
+            if (i === 0) li.classList.add("rank1");
+            if (i === 1) li.classList.add("rank2");
+            if (i === 2) li.classList.add("rank3");
+            li.innerHTML = `<span class="name">${escapeHtml(
+              p.name
+            )}</span><span class="badge">${p.score}</span>`;
+            leaderList.appendChild(li);
+          });
+          topBadge.innerText =
+            arr.length > 0 ? `${arr[0].name} (${arr[0].score})` : "—";
+        });
+      }
+
+      /* ================ Cheer (speech) only while started ================ */
+      function startCheer() {
+        stopCheer();
+        if (!voiceOn) return;
+        cheerTimer = setInterval(() => {
+          playersRef.once("value").then((snap) => {
+            const data = snap.val() || {};
+            const arr = Object.entries(data)
+              .map(([id, v]) => ({ id, name: v.name, score: v.score || 0 }))
+              .sort((a, b) => b.score - a.score);
+            if (arr.length === 0) return;
+            const top = arr[0];
+            speakRandomTop(top.name);
+          });
+        }, 30000);
+      }
+      function stopCheer() {
+        if (cheerTimer) {
+          clearInterval(cheerTimer);
+          cheerTimer = null;
+        }
+      }
+      function speakRandomTop(name) {
+        if (!voiceOn) return;
+        const msgs = [
+          `برافو يا ${name}! انت متصدر دلوقتي`,
+          `استمر يا ${name}، قدامك منافسة`,
+          `يا سلام على الشغل يا ${name}`,
+        ];
+        const text = msgs[Math.floor(Math.random() * msgs.length)];
+        speak(text);
+      }
+      function speak(txt) {
+        try {
+          const u = new SpeechSynthesisUtterance(txt);
+          u.lang = "ar-EG";
+          u.rate = 0.95;
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(u);
+        } catch (e) {}
+      }
+      function playStart() {
+        sStart.play().catch(() => {});
+      }
+      function playEnd() {
+        sEnd.play().catch(() => {});
+      }
+
+      /* ================ Finalization: compute results, save round, celebrate ================ */
+      async function performFinalization() {
+        // gather players
+        const snap = await playersRef.once("value");
+        const data = snap.val() || {};
+        const arr = Object.entries(data).map(([id, v]) => ({
+          id,
+          name: v.name,
+          score: v.score || 0,
+        }));
+        arr.sort((a, b) => b.score - a.score);
+        // save snapshot to results with timestamp
+        const round = {
+          timestamp: Date.now(),
+          topic:
+            (await liveRef.child("settings").once("value")).val()?.topic ||
+            "عام",
+          totalSeconds,
+          participants: arr.length,
+          standings: arr,
+        };
+        await resultsRef.push(round);
+
+        // show celebration to everyone (UI)
+        if (arr.length === 0) return;
+        const top = arr[0];
+        winnerText.innerText = `الفائز: ${top.name} — ${top.score} نقطة 🏆`;
+        celebration.style.display = "grid";
+        confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
+        playEnd();
+        sClap.play().catch(() => {});
+        // hide after 6s and return to landing (for everyone)
+        setTimeout(async () => {
+          celebration.style.display = "none";
+          // reset live status to waiting and keep settings, but clear players for next round
+          await liveRef.update({ status: "waiting" });
+          // remove players entries (so next round starts from zero)
+          await playersRef.remove();
+        }, 6000);
+      }
+
+      /* ================ Utilities ================ */
+      function shuffleArray(a) {
+        return a.slice().sort(() => Math.random() - 0.5);
+      }
+      function escapeHtml(s) {
+        return (s || "")
+          .toString()
+          .replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              }[c])
+          );
+      }
+      function translateStatus(s) {
+        if (s === "waiting") return "في انتظار اكتمال العدد";
+        if (s === "started") return "المسابقة جارية";
+        if (s === "ended") return "انتهت المسابقة";
+        return s;
+      }
+      function translateStatusShort(s) {
+        if (s === "waiting") return "في انتظار";
+        if (s === "started") return "جارية";
+        if (s === "ended") return "انتهت";
+        return s;
+      }
+
+      /* ================ Visibility (anti-cheat basic) ================ */
+      document.addEventListener("visibilitychange", () => {
+        if (!playerId) return;
+        const left = document.hidden;
+        db.ref(`liveQuiz/players/${playerId}`).update({
+          leftTab: left,
+          lastSeenTab: Date.now(),
+        });
       });
+
+      /* ================ Init defaults ================ */
+      (async function init() {
+        const snap = await liveRef.once("value");
+        if (!snap.exists()) {
+          await liveRef.set({
+            status: "waiting",
+            settings: { totalSeconds: 300, maxParticipants: 5, topic: "عام" },
+          });
+          totalTimeLabel.innerText = `5 دقائق`;
+          requiredCount.innerText = 5;
+        } else {
+          const val = snap.val() || {};
+          const settings = val.settings || {};
+          if (settings.totalSeconds) totalSeconds = settings.totalSeconds;
+          if (settings.maxParticipants)
+            maxParticipants = settings.maxParticipants;
+          if (settings.topic)
+            (topicLabel.innerText = `المحور: ${settings.topic}`),
+              (adminTopic.value = settings.topic);
+          totalTimeLabel.innerText = `${Math.round(totalSeconds / 60)} دقائق`;
+          adminMax.value = maxParticipants;
+          adminDuration.value = Math.round(totalSeconds / 60);
+        }
+        // update small UI players count
+        playersRef.on("value", (snap) => {
+          const d = snap.val() || {};
+          playersCount.innerText = Object.keys(d).length;
+        });
+      })();
     </script>
   </body>
 </html>
