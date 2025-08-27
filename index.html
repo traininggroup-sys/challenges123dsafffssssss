@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>مسابقة أعضاء جروب المشتركين للتدريب - مباشر</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --brand: #ff5722;
+        --bg1: #ffecd2;
+        --bg2: #fcb69f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Cairo", system-ui, Segoe UI, Arial, sans-serif;
+        background: linear-gradient(135deg, var(--bg1), var(--bg2));
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+      }
+      .card {
+        width: min(680px, 92vw);
+        background: #fff;
+        border-radius: 22px;
+        padding: 24px 22px;
+        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.12);
+      }
+      h1 {
+        margin: 0 0 14px;
+        color: var(--brand);
+        font-size: 28px;
+      }
+      .muted {
+        color: #666;
+      }
+      .btn {
+        display: inline-block;
+        background: var(--brand);
+        color: #fff;
+        border: none;
+        border-radius: 14px;
+        padding: 12px 18px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: 0 6px 16px rgba(255, 87, 34, 0.35);
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(0.95);
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .field {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      input[type="text"] {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 15px;
+        width: 240px;
+      }
+
+      .hr {
+        height: 1px;
+        background: #eee;
+        margin: 16px 0;
+      }
+      .center {
+        text-align: center;
+      }
+
+      .options {
+        margin-top: 10px;
+        display: grid;
+        gap: 10px;
+      }
+      .option {
+        border: 2px solid transparent;
+        background: #f7f7f7;
+        border-radius: 12px;
+        padding: 12px;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+      .option:hover {
+        border-color: var(--brand);
+        background: #fff3e8;
+      }
+
+      #timer {
+        font-weight: 700;
+        color: var(--brand);
+        margin: 8px 0 12px;
+      }
+      #message {
+        font-weight: 700;
+        margin: 8px 0 0;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 220px;
+        gap: 14px;
+      }
+      .board {
+        background: #fafafa;
+        border: 1px solid #eee;
+        border-radius: 14px;
+        padding: 10px;
+      }
+      .board h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .board ol {
+        margin: 0;
+        padding: 0 0 0 18px;
+        max-height: 280px;
+        overflow: auto;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #fff;
+        border: 1px solid #eee;
+        border-radius: 999px;
+        padding: 6px 10px;
+      }
+      .pill b {
+        color: var(--brand);
+      }
+
+      .countdown {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--brand);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="app">
+      <!-- شاشة البداية / اللوبي -->
+      <div id="screen-lobby">
+        <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
+        <p class="muted">
+          انضم دلوقتي واستعد.. المسابقة هتبدأ تلقائيًا لما يوصل عدد المشاركين
+          للحد الأدنى أو بعد العدّاد 🎯
+        </p>
+        <div class="row" style="margin: 10px 0 14px">
+          <div class="field">
+            <label for="name">اسمك:</label>
+            <input id="playerName" type="text" placeholder="اكتب اسمك" />
+          </div>
+          <button class="btn" id="joinBtn">المشاركة</button>
+        </div>
+
+        <div class="pill" style="margin: 8px 0">
+          <span>المتصلون الآن: <b id="playersCount">0</b></span>
+          <span style="width: 8px"></span>
+          <span>الحد الأدنى للبداية: <b id="minPlayersPill">--</b></span>
+        </div>
+
+        <div id="lobbyStatus" class="center" style="margin: 10px 0 8px"></div>
+        <div class="countdown center" id="lobbyCountdown"></div>
+
+        <div class="board" style="margin-top: 12px">
+          <h3>المشاركون الحاليون</h3>
+          <ol id="playersList"></ol>
+        </div>
+      </div>
+
+      <!-- شاشة المسابقة -->
+      <div id="screen-quiz" style="display: none">
+        <div class="two-col">
+          <div>
+            <div id="timer">الوقت المتبقي للسؤال: -- ثانية</div>
+            <h2 id="questionText"></h2>
+            <div id="message"></div>
+            <div class="options" id="options"></div>
+          </div>
+          <div class="board">
+            <h3>الترتيب المباشر</h3>
+            <ol id="leaderboardList"></ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- شاشة النهاية -->
+      <div id="screen-end" style="display: none">
+        <h2>انتهت المسابقة 🎉</h2>
+        <p class="muted">نتيجتك: <b id="finalScore">0</b></p>
+        <div class="board">
+          <h3>الترتيب النهائي</h3>
+          <ol id="finalBoard"></ol>
+        </div>
+        <div class="center" style="margin-top: 12px">
+          <button class="btn" onclick="location.reload()">
+            الرجوع للبداية
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        push,
+        set,
+        update,
+        onValue,
+        onDisconnect,
+        serverTimestamp,
+        runTransaction,
+      } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+      // ===== 1) إعداد Firebase (استخدمي إعدادات مشروعك) =====
+      const firebaseConfig = {
+        apiKey: "AIzaSyDOQ1wpof7OhyRRCD_0Of0RY0jggnHmSJ4",
+        authDomain: "test-competion.firebaseapp.com",
+        databaseURL: "https://test-competion-default-rtdb.firebaseio.com",
+        projectId: "test-competion",
+        storageBucket: "test-competion.firebasestorage.app",
+        messagingSenderId: "605584028373",
+        appId: "1:605584028373:web:9cfc40fad5bf6356dbe85c",
+        measurementId: "G-7WEQBFVEJW",
+      };
+      const appFB = initializeApp(firebaseConfig);
+      const db = getDatabase(appFB);
+
+      // ===== 2) إعدادات المسابقة (غيريها براحتك) =====
+      const MIN_PLAYERS = 2; // الحد الأدنى لبدء العدّاد
+      const LOBBY_COUNTDOWN_SECONDS = 20; // عدّاد اللوبي قبل البدء
+      const TIME_PER_QUESTION = 15; // ثواني لكل سؤال
+
+      document.getElementById("minPlayersPill").textContent = MIN_PLAYERS;
+
+      // ===== 3) أصوات محسّنة =====
+      const sndCorrect = new Audio(
+        "https://cdn.pixabay.com/audio/2022/03/15/audio_6f2aa2f2df.mp3"
+      );
+      const sndWrong = new Audio(
+        "https://cdn.pixabay.com/audio/2022/03/15/audio_3f0a9a5e17.mp3"
+      );
+      const sndTick = new Audio(
+        "https://cdn.pixabay.com/audio/2022/03/15/audio_9c1d2b1a4d.mp3"
+      ); // تيك خفيف
+      const sndTimeUp = new Audio(
+        "https://cdn.pixabay.com/audio/2022/03/15/audio_1b5b8b5a3b.mp3"
+      );
+
+      // لمنع حظر التشغيل التلقائي في بعض المتصفحات
+      const unlockAudio = () => {
+        [sndCorrect, sndWrong, sndTick, sndTimeUp].forEach((a) => {
+          a.muted = false;
+          a.play()
+            .then(() => a.pause())
+            .catch(() => {});
+        });
+        document.removeEventListener("click", unlockAudio);
+      };
+      document.addEventListener("click", unlockAudio);
+
+      // ===== 4) بنك أسئلة (مثال) =====
+      const QUESTIONS = [
+        {
+          q: "ما هي عاصمة مصر؟",
+          opts: ["القاهرة", "الإسكندرية", "الأقصر", "الجيزة"],
+          a: "القاهرة",
+        },
+        {
+          q: "أكبر كوكب في النظام الشمسي هو؟",
+          opts: ["الأرض", "المشتري", "المريخ", "زحل"],
+          a: "المشتري",
+        },
+        {
+          q: "لغة الويب الأشهر للواجهة الأمامية؟",
+          opts: ["Python", "JavaScript", "C++", "Java"],
+          a: "JavaScript",
+        },
+        {
+          q: "أسرع حيوان بري؟",
+          opts: ["الفهد", "الأسد", "الظبي", "النمر"],
+          a: "الفهد",
+        },
+        { q: "عدد كواكب النظام الشمسي؟", opts: ["7", "8", "9", "10"], a: "8" },
+      ];
+
+      // ===== 5) حالة اللاعب المحلي =====
+      let playerId = null;
+      let playerName = "";
+      let score = 0;
+      let qIndex = 0;
+      let currentTimer = null;
+      let shuffled = [];
+
+      const el = (sel) => document.querySelector(sel);
+      const screenLobby = el("#screen-lobby");
+      const screenQuiz = el("#screen-quiz");
+      const screenEnd = el("#screen-end");
+
+      // ===== 6) الاشتراك في اللوبي وعداد البداية =====
+      const statusRef = ref(db, "liveQuiz/status");
+      const lobbyRef = ref(db, "liveQuiz");
+      const playersRef = ref(db, "liveQuiz/players");
+
+      // إظهار المشاركين
+      onValue(playersRef, (snap) => {
+        const data = snap.val() || {};
+        const list = Object.values(data);
+        el("#playersCount").textContent = list.length;
+        el("#playersList").innerHTML = list
+          .map((p) => `<li>${escapeHtml(p.name || "لاعب")}</li>`)
+          .join("");
+
+        // تنسيق بدء العدّاد تلقائيًا: لو الحالة waiting وعدد المشاركين وصل للحد الأدنى، فعّل العدّاد مرة واحدة
+        onValue(
+          statusRef,
+          (stSnap) => {
+            const status = stSnap.val() || "waiting";
+            if (status === "waiting" && list.length >= MIN_PLAYERS) {
+              // استخدم transaction لتجنب السباقات بين العملاء المتعددين
+              runTransaction(ref(db, "liveQuiz/status"), (curr) => {
+                if (curr === "waiting" || curr === null) {
+                  return "countdown";
+                }
+                return curr;
+              }).then((res) => {
+                if (res.committed && res.snapshot.val() === "countdown") {
+                  // خزني وقت بداية العدّاد من السيرفر
+                  update(lobbyRef, {
+                    lobbyCountdownStartsAt: serverTimestamp(),
+                  });
+                }
+              });
+            }
+          },
+          { onlyOnce: true }
+        );
+      });
+
+      // مراقبة الحالة العامة
+      onValue(lobbyRef, (snap) => {
+        const data = snap.val() || {};
+        const status = data.status || "waiting";
+        const startsAt = data.lobbyCountdownStartsAt;
+
+        if (status === "waiting") {
+          showLobbyMsg("بانتظار اكتمال العدد أو بدء العدّاد…");
+          el("#lobbyCountdown").textContent = "";
+        }
+        if (status === "countdown") {
+          showLobbyMsg("يبدأ خلال:");
+          startLobbyCountdown(startsAt);
+        }
+        if (status === "started") {
+          startQuiz();
+        }
+        if (status === "ended") {
+          showEnd();
+        }
+      });
+
+      // بدء العدّاد على جانب العميل
+      let lobbyTicker = null;
+      function startLobbyCountdown(startsAt) {
+        if (!startsAt) {
+          return;
+        }
+        clearInterval(lobbyTicker);
+        lobbyTicker = setInterval(() => {
+          const startMs =
+            typeof startsAt === "number"
+              ? startsAt
+              : startsAt[".sv"]
+              ? Date.now()
+              : startsAt;
+          const endAt = startMs + LOBBY_COUNTDOWN_SECONDS * 1000;
+          const remain = Math.max(0, Math.floor((endAt - Date.now()) / 1000));
+          el("#lobbyCountdown").textContent = remain + " ثانية";
+          if (remain <= 0) {
+            clearInterval(lobbyTicker);
+            // رفعي الحالة إلى started (مرة واحدة)
+            runTransaction(statusRef, (curr) => {
+              if (curr === "countdown") {
+                return "started";
+              }
+              return curr;
+            }).then((res) => {
+              if (res.committed && res.snapshot.val() === "started") {
+                update(lobbyRef, { quizStartsAt: serverTimestamp() });
+              }
+            });
+          }
+        }, 200);
+      }
+
+      function showLobbyMsg(msg) {
+        el("#lobbyStatus").textContent = msg;
+      }
+
+      // ===== 7) زر الانضمام =====
+      el("#joinBtn").addEventListener("click", async () => {
+        const nameInput = el("#playerName");
+        playerName = (nameInput.value || "لاعب مجهول").trim();
+        if (!playerName) {
+          playerName = "لاعب مجهول";
+        }
+
+        // سجّلي اللاعب
+        const newKey = push(playersRef).key;
+        playerId = newKey;
+        await set(ref(db, `liveQuiz/players/${playerId}`), {
+          name: playerName,
+          score: 0,
+          joinedAt: serverTimestamp(),
+          lastSeen: serverTimestamp(),
+        });
+        onDisconnect(ref(db, `liveQuiz/players/${playerId}`)).remove();
+
+        el("#joinBtn").disabled = true;
+        showLobbyMsg("تم الانضمام ✔️ — انتظر البداية…");
+      });
+
+      // ===== 8) بدء المسابقة على جهاز اللاعب =====
+      function startQuiz() {
+        // إعداد محلي
+        score = 0;
+        qIndex = 0;
+        shuffled = shuffle(QUESTIONS);
+        screenLobby.style.display = "none";
+        screenEnd.style.display = "none";
+        screenQuiz.style.display = "block";
+        nextQuestion();
+        // استمع للوحة المراكز طوال الوقت
+        onValue(playersRef, (snap) => {
+          const data = snap.val() || {};
+          const arr = Object.values(data).sort(
+            (a, b) => (b.score || 0) - (a.score || 0)
+          );
+          el("#leaderboardList").innerHTML = arr
+            .map(
+              (p) =>
+                `<li>${escapeHtml(p.name || "لاعب")} - ${p.score || 0}</li>`
+            )
+            .join("");
+        });
+      }
+
+      function shuffle(arr) {
+        return arr.slice().sort(() => Math.random() - 0.5);
+      }
+
+      function nextQuestion() {
+        if (qIndex >= shuffled.length) {
+          return finishQuiz();
+        }
+        const q = shuffled[qIndex];
+        el("#questionText").textContent = q.q;
+        el("#message").textContent = "";
+        const opts = shuffle(q.opts);
+        const wrap = el("#options");
+        wrap.innerHTML = "";
+        opts.forEach((op) => {
+          const div = document.createElement("div");
+          div.className = "option";
+          div.textContent = op;
+          div.onclick = () => selectAnswer(op === q.a);
+          wrap.appendChild(div);
+        });
+
+        startQuestionTimer(() => {
+          // لما يخلص الوقت
+          sndTimeUp.play().catch(() => {});
+          selectAnswer(false, true); // تعتبرها غلط
+        });
+      }
+
+      function startQuestionTimer(onElapsed) {
+        clearInterval(currentTimer);
+        let remain = TIME_PER_QUESTION;
+        el("#timer").textContent = `الوقت المتبقي للسؤال: ${remain} ثانية`;
+        currentTimer = setInterval(() => {
+          remain--;
+          if (remain < 0) remain = 0;
+          el("#timer").textContent = `الوقت المتبقي للسؤال: ${remain} ثانية`;
+          sndTick
+            .play()
+            .then(() => {
+              sndTick.pause();
+              sndTick.currentTime = 0;
+            })
+            .catch(() => {});
+          if (remain <= 0) {
+            clearInterval(currentTimer);
+            onElapsed && onElapsed();
+          }
+        }, 1000);
+      }
+
+      function selectAnswer(correct, timeUp = false) {
+        clearInterval(currentTimer);
+        if (correct) {
+          score++;
+          el("#message").textContent = "إجابة صحيحة ✅";
+          el("#message").style.color = "green";
+          sndCorrect.play().catch(() => {});
+        } else {
+          el("#message").textContent = timeUp
+            ? "انتهى الوقت ⏰"
+            : "إجابة خاطئة ❌";
+          el("#message").style.color = "#d00";
+          sndWrong.play().catch(() => {});
+        }
+        // حدّث نتيجتك على السحابة
+        if (playerId) {
+          update(ref(db, `liveQuiz/players/${playerId}`), {
+            score,
+            lastSeen: serverTimestamp(),
+          });
+        }
+        qIndex++;
+        setTimeout(nextQuestion, 900);
+      }
+
+      function finishQuiz() {
+        screenQuiz.style.display = "none";
+        screenEnd.style.display = "block";
+        el("#finalScore").textContent = `${score} / ${shuffled.length}`;
+        // اعرض الترتيب النهائي
+        onValue(
+          playersRef,
+          (snap) => {
+            const data = snap.val() || {};
+            const arr = Object.values(data).sort(
+              (a, b) => (b.score || 0) - (a.score || 0)
+            );
+            el("#finalBoard").innerHTML = arr
+              .map(
+                (p) =>
+                  `<li>${escapeHtml(p.name || "لاعب")} - ${p.score || 0}</li>`
+              )
+              .join("");
+          },
+          { onlyOnce: true }
+        );
+
+        // لو أردتِ إنهاء الغرفة تلقائيًا بعد انتهاء الجميع يمكن لاحقًا إضافة منطق إضافي
+      }
+
+      function showEnd() {
+        // استُدعيت عندما admin/التزامن أنهى المسابقة
+        if (screenQuiz.style.display !== "none") {
+          finishQuiz();
+        } else {
+          screenLobby.style.display = "none";
+          screenEnd.style.display = "block";
+        }
+      }
+
+      // ===== أدوات =====
+      function escapeHtml(s) {
+        return (s || "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[c])
+        );
+      }
+
+      // ===== (اختياري) زر إداري سريع من الكونسول =====
+      // لتجربة البدء اليدوي اكتبي في كونسول المتصفح:
+      //   firebaseStart()
+      // وللإنهاء:
+      //   firebaseEnd()
+      window.firebaseStart = async () => {
+        await set(statusRef, "countdown");
+        await update(lobbyRef, { lobbyCountdownStartsAt: serverTimestamp() });
+      };
+      window.firebaseEnd = async () => {
+        await set(statusRef, "ended");
+      };
+    </script>
+  </body>
+</html>
