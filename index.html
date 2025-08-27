@@ -118,6 +118,10 @@
         <button onclick="joinCompetition()">المشاركة</button>
       </div>
 
+      <div id="waiting" style="display: none">
+        <p id="waitMessage"></p>
+      </div>
+
       <div id="competition">
         <div class="progress">
           <div class="progress-bar" id="progressBar"></div>
@@ -170,7 +174,7 @@
       let score = 0;
       let players = [];
       let competitionStarted = false;
-      let maxPlayers = 5; // عدد المتسابقين المطلوب
+      let maxPlayers = 2; // عدد المتسابقين المطلوب
       let numQuestions = 5; // عدد الأسئلة
 
       // ==== المشاركة ====
@@ -180,23 +184,31 @@
           alert("اكتبي اسمك");
           return;
         }
-        if (players.includes(name)) {
+        if (players.some((p) => p.name === name)) {
           alert("هذا الاسم مسجل بالفعل");
           return;
         }
         players.push({ name: name, score: 0 });
         currentUser = name;
         document.getElementById("loginForm").style.display = "none";
-        document.getElementById(
-          "status"
-        ).textContent = `انتظار باقي المتسابقين... (${players.length}/${maxPlayers})`;
+        document.getElementById("waiting").style.display = "block";
+        updateWaitMessage();
         checkStartCompetition();
+      }
+
+      // ==== تحديث رسالة الانتظار ====
+      function updateWaitMessage() {
+        document.getElementById(
+          "waitMessage"
+        ).textContent = `انتظار باقي المتسابقين... (${players.length}/${maxPlayers})`;
       }
 
       // ==== بدء المسابقة تلقائي ====
       function checkStartCompetition() {
+        updateWaitMessage();
         if (players.length >= maxPlayers && !competitionStarted) {
           competitionStarted = true;
+          document.getElementById("waiting").style.display = "none";
           startCompetition();
           startCheer(); // بدء الأصوات
         }
@@ -243,6 +255,9 @@
       function checkAnswer(selected) {
         if (selected === questions[currentQuestion].answer) score++;
         currentQuestion++;
+        // تحديث النتيجة في قائمة اللاعبين
+        const player = players.find((p) => p.name === currentUser);
+        if (player) player.score = score;
         updateLeaderboard();
         showQuestion();
       }
