@@ -7,28 +7,38 @@
     <style>
       body {
         font-family: Cairo, sans-serif;
-        background: #f0f0f0;
         margin: 0;
         padding: 0;
+        background: linear-gradient(120deg, #fdfbfb, #ebedee);
       }
       .container {
         max-width: 700px;
         margin: 20px auto;
         padding: 20px;
-        background: white;
-        border-radius: 10px;
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
+      h2 {
+        color: #333;
+      }
+      input,
+      button {
+        padding: 10px;
+        margin: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
       }
       button {
-        padding: 10px 20px;
-        margin: 5px;
         cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+        font-weight: bold;
+        transition: 0.3s;
       }
-      #adminPanel {
-        display: none;
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin-top: 10px;
-        background: #e0e0e0;
+      button:hover {
+        background-color: #45a049;
       }
       #competition {
         display: none;
@@ -36,15 +46,41 @@
       }
       .question {
         margin: 20px 0;
+        font-size: 18px;
+      }
+      .optionBtn {
+        display: block;
+        margin: 10px auto;
+        padding: 10px;
+        width: 80%;
+        font-size: 16px;
+        border: none;
+        border-radius: 8px;
+        background: #2196f3;
+        color: white;
+        transition: 0.3s;
+      }
+      .optionBtn:hover {
+        background: #1976d2;
       }
       #leaderboard {
         margin-top: 20px;
+        text-align: right;
+      }
+      #leaderboard ul {
+        list-style: none;
+        padding: 0;
+      }
+      #leaderboard li {
+        padding: 5px;
+        font-weight: bold;
       }
       #celebration {
         display: none;
         font-size: 24px;
         color: green;
         animation: blink 1s infinite;
+        margin-top: 20px;
       }
       @keyframes blink {
         0%,
@@ -57,48 +93,36 @@
           opacity: 0;
         }
       }
+      .progress {
+        height: 20px;
+        background: #eee;
+        border-radius: 10px;
+        margin: 10px 0;
+        overflow: hidden;
+      }
+      .progress-bar {
+        height: 100%;
+        background: #4caf50;
+        width: 0%;
+        transition: 0.3s;
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <h2>أهلاً بكم في المسابقة! <span id="competitionTopic"></span></h2>
+      <h2>أهلاً بكم في مسابقة أعضاء جروب المشتركين للتدريب!</h2>
+      <p id="competitionTopic">محور المسابقة: عام</p>
 
       <div id="loginForm">
         <input type="text" id="username" placeholder="اكتب اسمك" />
         <button onclick="joinCompetition()">المشاركة</button>
-        <button onclick="showAdmin()">دخول كمراقب</button>
-      </div>
-
-      <div id="adminLogin" style="display: none">
-        <input type="email" id="adminEmail" placeholder="البريد الإلكتروني" />
-        <input type="password" id="adminPassword" placeholder="كلمة السر" />
-        <button onclick="loginAdmin()">دخول</button>
-      </div>
-
-      <div id="adminPanel">
-        <h3>لوحة الأدمن</h3>
-        <p>حدد محور المسابقة وعدد الأسئلة وعدد المتسابقين:</p>
-        <input type="text" id="topic" placeholder="مثال: إنجليزي" />
-        <input
-          type="number"
-          id="numQuestions"
-          placeholder="عدد الأسئلة"
-          min="1"
-          max="20"
-        />
-        <input
-          type="number"
-          id="numPlayers"
-          placeholder="عدد المتسابقين المطلوب"
-          min="1"
-          max="50"
-        />
-        <button onclick="setCompetition()">تأكيد الإعدادات</button>
-        <div id="adminStatus"></div>
       </div>
 
       <div id="competition">
-        <h3 id="questionText"></h3>
+        <div class="progress">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="question" id="questionText"></div>
         <div id="options"></div>
         <p id="status"></p>
       </div>
@@ -115,21 +139,7 @@
       <source src="cheer.mp3" type="audio/mpeg" />
     </audio>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script>
-      // Firebase Config
-      const firebaseConfig = {
-        apiKey: "AIzaSyDUMMY",
-        authDomain: "test-competion.firebaseapp.com",
-        projectId: "test-competion",
-        storageBucket: "test-competion.appspot.com",
-        messagingSenderId: "1234567890",
-        appId: "1:1234567890:web:abcd",
-      };
-      firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-
       // ==== بيانات الأسئلة التجريبية ====
       const allQuestions = [
         {
@@ -153,21 +163,6 @@
           options: ["الأسد", "الفهد", "الحصان", "الكلب"],
           answer: 1,
         },
-        {
-          q: "ما هي لغة البرمجة الأكثر شعبية؟",
-          options: ["Python", "C++", "Java", "HTML"],
-          answer: 0,
-        },
-        {
-          q: "أي الكواكب أقرب للشمس؟",
-          options: ["المريخ", "الأرض", "عطارد", "الزهرة"],
-          answer: 2,
-        },
-        {
-          q: "ما هو أكبر محيط في العالم؟",
-          options: ["الأطلسي", "الهادئ", "الهندي", "المتجمد"],
-          answer: 1,
-        },
       ];
 
       let currentUser = "";
@@ -175,7 +170,8 @@
       let score = 0;
       let players = [];
       let competitionStarted = false;
-      let competitionSettings = { topic: "", numQuestions: 5, numPlayers: 5 };
+      let maxPlayers = 5; // عدد المتسابقين المطلوب
+      let numQuestions = 5; // عدد الأسئلة
 
       // ==== المشاركة ====
       function joinCompetition() {
@@ -188,21 +184,18 @@
           alert("هذا الاسم مسجل بالفعل");
           return;
         }
-        players.push(name);
+        players.push({ name: name, score: 0 });
         currentUser = name;
         document.getElementById("loginForm").style.display = "none";
         document.getElementById(
           "status"
-        ).textContent = `انتظار باقي المتسابقين... (${players.length}/${competitionSettings.numPlayers})`;
+        ).textContent = `انتظار باقي المتسابقين... (${players.length}/${maxPlayers})`;
         checkStartCompetition();
       }
 
       // ==== بدء المسابقة تلقائي ====
       function checkStartCompetition() {
-        if (
-          players.length >= competitionSettings.numPlayers &&
-          !competitionStarted
-        ) {
+        if (players.length >= maxPlayers && !competitionStarted) {
           competitionStarted = true;
           startCompetition();
           startCheer(); // بدء الأصوات
@@ -212,12 +205,7 @@
       // ==== المسابقة ====
       let questions = [];
       function startCompetition() {
-        questions = shuffleArray(allQuestions).slice(
-          0,
-          competitionSettings.numQuestions
-        );
-        document.getElementById("competitionTopic").textContent =
-          competitionSettings.topic;
+        questions = shuffleArray(allQuestions).slice(0, numQuestions);
         document.getElementById("competition").style.display = "block";
         currentQuestion = 0;
         score = 0;
@@ -240,11 +228,16 @@
         q.options.forEach((o, i) => {
           const btn = document.createElement("button");
           btn.textContent = o;
+          btn.className = "optionBtn";
           btn.onclick = () => {
             checkAnswer(i);
           };
           opts.appendChild(btn);
         });
+
+        // تحديث progress bar
+        document.getElementById("progressBar").style.width =
+          (currentQuestion / numQuestions) * 100 + "%";
       }
 
       function checkAnswer(selected) {
@@ -258,25 +251,19 @@
       function updateLeaderboard() {
         const ul = document.getElementById("rankList");
         ul.innerHTML = "";
-        const data = players
-          .map((p) => {
-            let s = p === currentUser ? score : 0;
-            return { name: p, score: s };
-          })
-          .sort((a, b) => b.score - a.score);
-        data.forEach((d) => {
+        players.sort((a, b) => b.score - a.score);
+        players.forEach((p) => {
           const li = document.createElement("li");
-          li.textContent = `${d.name}: ${d.score}`;
+          li.textContent = `${p.name}: ${p.score}`;
           ul.appendChild(li);
         });
       }
 
       // ==== نهاية المسابقة ====
       function checkEndCompetition() {
-        const maxScore = Math.max(
-          ...players.map((p) => (p === currentUser ? score : 0))
-        );
-        document.getElementById("winnerName").textContent = currentUser;
+        const maxScore = Math.max(...players.map((p) => p.score));
+        const winner = players.find((p) => p.score === maxScore);
+        document.getElementById("winnerName").textContent = winner.name;
         document.getElementById("celebration").style.display = "block";
         stopCheer();
       }
@@ -291,40 +278,6 @@
       }
       function stopCheer() {
         clearInterval(cheerInterval);
-      }
-
-      // ==== الأدمن باستخدام Firebase Auth ====
-      function showAdmin() {
-        document.getElementById("adminLogin").style.display = "block";
-      }
-      function loginAdmin() {
-        const email = document.getElementById("adminEmail").value.trim();
-        const pass = document.getElementById("adminPassword").value.trim();
-        auth
-          .signInWithEmailAndPassword(email, pass)
-          .then((userCredential) => {
-            document.getElementById("adminPanel").style.display = "block";
-            document.getElementById("adminLogin").style.display = "none";
-          })
-          .catch((err) => alert("بيانات خاطئة!"));
-      }
-
-      function setCompetition() {
-        const topic = document.getElementById("topic").value.trim();
-        const numQ = parseInt(document.getElementById("numQuestions").value);
-        const numP = parseInt(document.getElementById("numPlayers").value);
-        if (!topic || !numQ || !numP) {
-          alert("اكمل كل الحقول");
-          return;
-        }
-        competitionSettings = {
-          topic: topic,
-          numQuestions: numQ,
-          numPlayers: numP,
-        };
-        document.getElementById(
-          "adminStatus"
-        ).textContent = `تم الإعداد: محور=${topic}, الأسئلة=${numQ}, المتسابقين=${numP}`;
       }
 
       // ==== مساعدة ====
