@@ -540,6 +540,8 @@
         questionDeadline = null,
         started = false;
 
+      const leaveBtn = $("#leaveBtn"); // زر الانسحاب (ممكن يكون null لو مش ظاهر)
+
       /* ========== أصوات WebAudio (بدون روابط خارجية) ========== */
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       const ctx = new AudioCtx();
@@ -601,6 +603,12 @@
         });
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
         welcomeCard.classList.add("hidden");
+        const live = (await liveRef.once("value")).val() || {};
+        if (live.status === "started") {
+          // انظري: هذا يبدأ اللعبة محليًا بعد الانضمام
+          started = true;
+          startGame();
+        }
       });
 
       /* ========== الترتيب المباشر + بدء تلقائي عند 2 ========== */
@@ -620,7 +628,13 @@
         // ترتيب مباشر
         renderLeaders(arr);
 
-        // ابدأ أول مرة فقط لما نوصل 2 وما يكونش بدأ
+        // لو مفيش لاعبين نهائيًا → نعمل reset للحالة لِـ waiting
+        if (arr.length === 0) {
+          await liveRef.set({ status: "waiting" });
+          return;
+        }
+
+        // ابدأ المسابقة آليًا لما نوصل العدد المطلوب (لو مش بدأت)
         if (arr.length >= REQUIRED_PLAYERS) {
           const live = (await liveRef.once("value")).val() || {};
           if (live.status !== "started") {
@@ -637,12 +651,15 @@
           st === "started" ? "بدأت" : st === "ended" ? "انتهت" : "في انتظار";
         statusLabel.innerText = statusShort.innerText;
 
+        // ابدأ اللعبة محليًا فقط لو هذا العميل مسجّل (playerId) ولم يبدأ بعد
         if (st === "started" && !started) {
-          started = true;
-          startGame();
-        }
-        if (st === "ended") {
-          // تظهر النتيجة/الاحتفال يتم في finalize()
+          if (playerId) {
+            started = true;
+            startGame();
+          } else {
+            // إذا المسابقة بدأت لكن هذا الزائر لم ينضم بعد، لا نفعل شيء
+            // (يستطيع الانضمام لاحقًا؛ انظري التعديل أسفل عند الـ joinBtn)
+          }
         }
       });
 
@@ -824,7 +841,7 @@
           leaderList.appendChild(li);
         });
         topBadge.innerText = arr.length
-          ? `${arr[0].name} (${arr[0].score || 0})`
+          ? `${arr[0].name || "لاعب"} (${arr[0].score || 0})`
           : "—";
       }
 
