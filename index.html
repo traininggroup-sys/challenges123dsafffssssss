@@ -545,7 +545,6 @@
         doneBox = $("#doneBox");
       const leaderList = $("#leaderList"),
         topBadge = $("#topBadge");
-      const leaveBtn = document.getElementById("leaveBtn");
 
       /* ========== حالة محلية ========== */
       let playerId = null,
@@ -558,7 +557,7 @@
 
       /* ========== أصوات WebAudio (بدون روابط خارجية) ========== */
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioCtx();
+      let ctx = new AudioCtx();
       let audioUnlocked = false;
       function unlockAudio() {
         if (audioUnlocked) return;
@@ -568,28 +567,20 @@
           .catch(() => {});
       }
       document.addEventListener("click", unlockAudio, { once: true });
+      const leaveBtn = document.getElementById("leaveBtn");
+
       if (leaveBtn) {
         leaveBtn.addEventListener("click", async () => {
           if (playerId) {
-            // امسح اللاعب من الداتا بيز
             await db.ref(`liveQuiz/players/${playerId}`).remove();
-
-            // صفر البيانات المحلية
             playerId = null;
             playerName = "";
-
-            // ❌ أوقف أي صوت شغال
-            stopAllSounds();
-
-            // رجّع المستخدم لشاشة الترحيب
+            // إرجاع المستخدم لواجهة الترحيب
             quizCard.classList.add("hidden");
             welcomeCard.classList.remove("hidden");
 
-            // (اختياري) تحديث حالة النصوص
-            const statusShort = document.getElementById("statusShort");
-            const statusLabel = document.getElementById("statusLabel");
-            if (statusShort) statusShort.innerText = "انسحبت";
-            if (statusLabel) statusLabel.innerText = "انسحبت من المسابقة";
+            // إيقاف جميع الأصوات
+            stopAllSounds();
           }
         });
       }
@@ -630,12 +621,11 @@
         },
       };
       function stopAllSounds() {
-        try {
-          ctx.close(); // يقفل كل الأصوات الحالية
-        } catch (e) {}
-
-        // ✨ إعادة إنشاء AudioContext جديد عشان يشتغل تاني لو اللاعب رجع
-        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx && ctx.state !== "closed") {
+          ctx.close();
+        }
+        ctx = new AudioCtx(); // نعيد تهيئة السياق بعد الإغلاق
+        audioUnlocked = false; // نرجع كأنه لسه ما اتفعلش
       }
 
       /* ========== انضمام ========== */
