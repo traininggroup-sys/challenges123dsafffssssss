@@ -5,299 +5,240 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>مسابقة أعضاء جروب المشتركين للتدريب</title>
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Cairo&display=swap");
+
       body {
-        font-family: Cairo, sans-serif;
+        font-family: "Cairo", sans-serif;
+        background: linear-gradient(to bottom right, #ffecd2, #fcb69f);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
         margin: 0;
-        padding: 0;
-        background: linear-gradient(120deg, #fdfbfb, #ebedee);
       }
+
       .container {
-        max-width: 700px;
-        margin: 20px auto;
-        padding: 20px;
         background: #fff;
-        border-radius: 15px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        width: 450px;
         text-align: center;
       }
-      h2 {
-        color: #333;
-      }
-      input,
-      button {
-        padding: 10px;
-        margin: 5px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
+
+      h1 {
+        margin-bottom: 20px;
+        color: #ff5722;
       }
       button {
+        padding: 12px 25px;
+        font-size: 16px;
         cursor: pointer;
-        background-color: #4caf50;
+        border: none;
+        border-radius: 8px;
+        background: #ff5722;
         color: white;
-        font-weight: bold;
         transition: 0.3s;
       }
       button:hover {
-        background-color: #45a049;
+        background: #e64a19;
       }
-      #competition {
-        display: none;
-        margin-top: 20px;
-      }
-      .question {
-        margin: 20px 0;
-        font-size: 18px;
-      }
-      .optionBtn {
+
+      .option {
         display: block;
-        margin: 10px auto;
-        padding: 10px;
-        width: 80%;
-        font-size: 16px;
-        border: none;
+        margin: 12px 0;
+        padding: 12px;
         border-radius: 8px;
-        background: #2196f3;
-        color: white;
+        background: #f5f5f5;
+        cursor: pointer;
+        border: 2px solid transparent;
         transition: 0.3s;
       }
-      .optionBtn:hover {
-        background: #1976d2;
+      .option:hover {
+        background: #ffe0b2;
+        border-color: #ff5722;
+      }
+
+      #timer {
+        font-weight: bold;
+        margin-bottom: 15px;
+        font-size: 18px;
+        color: #ff5722;
+      }
+      #message {
+        margin: 10px 0;
+        font-weight: bold;
+        font-size: 16px;
       }
       #leaderboard {
         margin-top: 20px;
         text-align: right;
       }
-      #leaderboard ul {
-        list-style: none;
-        padding: 0;
+      #leaderboard h3 {
+        margin-bottom: 10px;
       }
-      #leaderboard li {
-        padding: 5px;
-        font-weight: bold;
-      }
-      #celebration {
-        display: none;
-        font-size: 24px;
-        color: green;
-        animation: blink 1s infinite;
-        margin-top: 20px;
-      }
-      @keyframes blink {
-        0%,
-        50%,
-        100% {
-          opacity: 1;
-        }
-        25%,
-        75% {
-          opacity: 0;
-        }
-      }
-      .progress {
-        height: 20px;
-        background: #eee;
-        border-radius: 10px;
-        margin: 10px 0;
-        overflow: hidden;
-      }
-      .progress-bar {
-        height: 100%;
-        background: #4caf50;
-        width: 0%;
-        transition: 0.3s;
+      #leaderboard ol {
+        padding-left: 20px;
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h2>أهلاً بكم في مسابقة أعضاء جروب المشتركين للتدريب!</h2>
-      <p id="competitionTopic">محور المسابقة: عام</p>
-
-      <div id="loginForm">
-        <input type="text" id="username" placeholder="اكتب اسمك" />
-        <button onclick="joinCompetition()">المشاركة</button>
-      </div>
-
-      <div id="waiting" style="display: none">
-        <p id="waitMessage"></p>
-      </div>
-
-      <div id="competition">
-        <div class="progress">
-          <div class="progress-bar" id="progressBar"></div>
-        </div>
-        <div class="question" id="questionText"></div>
-        <div id="options"></div>
-        <p id="status"></p>
-      </div>
-
-      <div id="leaderboard">
-        <h3>الترتيب المباشر:</h3>
-        <ul id="rankList"></ul>
-      </div>
-
-      <div id="celebration">🎉 الفائز: <span id="winnerName"></span> 🎉</div>
+    <div class="container" id="quizContainer">
+      <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
+      <button id="participateBtn">المشاركة</button>
     </div>
 
-    <audio id="cheerAudio">
-      <source src="cheer.mp3" type="audio/mpeg" />
-    </audio>
-
     <script>
-      // ==== بيانات الأسئلة التجريبية ====
-      const allQuestions = [
+      // الأسئلة
+      const questions = [
         {
-          q: "ما هي عاصمة مصر؟",
-          options: ["القاهرة", "الإسكندرية", "أسوان", "الأقصر"],
-          answer: 0,
+          question: "ما هي عاصمة مصر؟",
+          options: ["القاهرة", "الإسكندرية", "الأقصر", "الجيزة"],
+          answer: "القاهرة",
         },
         {
-          q: "كم عدد الأهرامات الرئيسية في الجيزة؟",
-          options: [1, 2, 3, 4],
-          answer: 2,
+          question: "أكبر كوكب في النظام الشمسي هو؟",
+          options: ["الأرض", "المشتري", "المريخ", "زحل"],
+          answer: "المشتري",
         },
         {
-          q: "ما لون السماء؟",
-          options: ["أحمر", "أزرق", "أخضر", "أسود"],
-          answer: 1,
+          question: "ما هي لغة البرمجة الأكثر استخدامًا في الويب؟",
+          options: ["Python", "JavaScript", "C++", "Java"],
+          answer: "JavaScript",
         },
-        { q: "كم عدد أيام الأسبوع؟", options: [5, 6, 7, 8], answer: 2 },
         {
-          q: "ما هو أسرع حيوان على الأرض؟",
-          options: ["الأسد", "الفهد", "الحصان", "الكلب"],
-          answer: 1,
+          question: "ما هو الحيوان الأسرع في العالم؟",
+          options: ["الفهد", "الأسد", "الظبي", "النمر"],
+          answer: "الفهد",
+        },
+        {
+          question: "كم عدد الكواكب في النظام الشمسي؟",
+          options: ["7", "8", "9", "10"],
+          answer: "8",
         },
       ];
 
-      let currentUser = "";
-      let currentQuestion = 0;
+      let currentIndex = 0;
       let score = 0;
-      let players = [];
-      let competitionStarted = false;
-      let maxPlayers = 2; // عدد المتسابقين المطلوب
-      let numQuestions = 5; // عدد الأسئلة
+      let timer;
+      const timePerQuestion = 15; // ثواني لكل سؤال
+      let playerName = "";
+      let questionsShuffled = [];
 
-      // ==== المشاركة ====
-      function joinCompetition() {
-        const name = document.getElementById("username").value.trim();
-        if (!name) {
-          alert("اكتبي اسمك");
-          return;
-        }
-        if (players.some((p) => p.name === name)) {
-          alert("هذا الاسم مسجل بالفعل");
-          return;
-        }
-        players.push({ name: name, score: 0 });
-        currentUser = name;
-        document.getElementById("loginForm").style.display = "none";
-        document.getElementById("waiting").style.display = "block";
-        updateWaitMessage();
-        checkStartCompetition();
-      }
+      const container = document.getElementById("quizContainer");
+      const participateBtn = document.getElementById("participateBtn");
 
-      // ==== تحديث رسالة الانتظار ====
-      function updateWaitMessage() {
-        document.getElementById(
-          "waitMessage"
-        ).textContent = `انتظار باقي المتسابقين... (${players.length}/${maxPlayers})`;
-      }
+      participateBtn.addEventListener("click", () => {
+        playerName = prompt("ادخل اسمك للمشاركة:") || "لاعب مجهول";
+        startQuiz();
+      });
 
-      // ==== بدء المسابقة تلقائي ====
-      function checkStartCompetition() {
-        updateWaitMessage();
-        if (players.length >= maxPlayers && !competitionStarted) {
-          competitionStarted = true;
-          document.getElementById("waiting").style.display = "none";
-          startCompetition();
-          startCheer(); // بدء الأصوات
-        }
-      }
+      // أصوات
+      const correctSound = new Audio(
+        "https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
+      );
+      const wrongSound = new Audio(
+        "https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"
+      );
+      const timeUpSound = new Audio(
+        "https://actions.google.com/sounds/v1/cartoon/slide_whistle_to_drum_hit.ogg"
+      );
 
-      // ==== المسابقة ====
-      let questions = [];
-      function startCompetition() {
-        questions = shuffleArray(allQuestions).slice(0, numQuestions);
-        document.getElementById("competition").style.display = "block";
-        currentQuestion = 0;
-        score = 0;
-        showQuestion();
-        updateLeaderboard();
-      }
-
-      function showQuestion() {
-        if (currentQuestion >= questions.length) {
-          document.getElementById(
-            "competition"
-          ).innerHTML = `<h3>انتهت المسابقة! نتيجتك: ${score}</h3>`;
-          checkEndCompetition();
-          return;
-        }
-        const q = questions[currentQuestion];
-        document.getElementById("questionText").textContent = q.q;
-        const opts = document.getElementById("options");
-        opts.innerHTML = "";
-        q.options.forEach((o, i) => {
-          const btn = document.createElement("button");
-          btn.textContent = o;
-          btn.className = "optionBtn";
-          btn.onclick = () => {
-            checkAnswer(i);
-          };
-          opts.appendChild(btn);
-        });
-
-        // تحديث progress bar
-        document.getElementById("progressBar").style.width =
-          (currentQuestion / numQuestions) * 100 + "%";
-      }
-
-      function checkAnswer(selected) {
-        if (selected === questions[currentQuestion].answer) score++;
-        currentQuestion++;
-        // تحديث النتيجة في قائمة اللاعبين
-        const player = players.find((p) => p.name === currentUser);
-        if (player) player.score = score;
-        updateLeaderboard();
-        showQuestion();
-      }
-
-      // ==== تحديث Leaderboard ====
-      function updateLeaderboard() {
-        const ul = document.getElementById("rankList");
-        ul.innerHTML = "";
-        players.sort((a, b) => b.score - a.score);
-        players.forEach((p) => {
-          const li = document.createElement("li");
-          li.textContent = `${p.name}: ${p.score}`;
-          ul.appendChild(li);
-        });
-      }
-
-      // ==== نهاية المسابقة ====
-      function checkEndCompetition() {
-        const maxScore = Math.max(...players.map((p) => p.score));
-        const winner = players.find((p) => p.score === maxScore);
-        document.getElementById("winnerName").textContent = winner.name;
-        document.getElementById("celebration").style.display = "block";
-        stopCheer();
-      }
-
-      // ==== الأصوات التشجيعية ====
-      let cheerInterval;
-      function startCheer() {
-        const audio = document.getElementById("cheerAudio");
-        cheerInterval = setInterval(() => {
-          audio.play();
-        }, 10000);
-      }
-      function stopCheer() {
-        clearInterval(cheerInterval);
-      }
-
-      // ==== مساعدة ====
-      function shuffleArray(array) {
+      // خلط الأسئلة
+      function shuffle(array) {
         return array.sort(() => Math.random() - 0.5);
+      }
+
+      // بدء المسابقة
+      function startQuiz() {
+        currentIndex = 0;
+        score = 0;
+        questionsShuffled = shuffle([...questions]);
+        showQuestion();
+      }
+
+      // عرض السؤال
+      function showQuestion() {
+        if (currentIndex >= questionsShuffled.length) {
+          endQuiz();
+          return;
+        }
+
+        const q = questionsShuffled[currentIndex];
+        container.innerHTML = `
+    <div id="timer">الوقت المتبقي: ${timePerQuestion}s</div>
+    <h2>${q.question}</h2>
+    <div id="message"></div>
+    ${shuffle([...q.options])
+      .map(
+        (opt) =>
+          `<div class="option" onclick="selectOption('${opt}')">${opt}</div>`
+      )
+      .join("")}
+  `;
+
+        let timeLeft = timePerQuestion;
+        timer = setInterval(() => {
+          timeLeft--;
+          document.getElementById(
+            "timer"
+          ).innerText = `الوقت المتبقي: ${timeLeft}s`;
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            timeUpSound.play();
+            currentIndex++;
+            showQuestion();
+          }
+        }, 1000);
+      }
+
+      // اختيار الإجابة
+      function selectOption(selected) {
+        clearInterval(timer);
+        const q = questionsShuffled[currentIndex];
+        const messageDiv = document.getElementById("message");
+        if (selected === q.answer) {
+          score++;
+          messageDiv.innerText = "إجابة صحيحة! ✅";
+          messageDiv.style.color = "green";
+          correctSound.play();
+        } else {
+          messageDiv.innerText = `خطأ ❌ الإجابة الصحيحة: ${q.answer}`;
+          messageDiv.style.color = "red";
+          wrongSound.play();
+        }
+        currentIndex++;
+        setTimeout(showQuestion, 1000);
+      }
+
+      // إنهاء المسابقة وعرض leaderboard
+      function endQuiz() {
+        let leaderboard = JSON.parse(
+          localStorage.getItem("leaderboard") || "[]"
+        );
+        leaderboard.push({ name: playerName, score: score });
+        leaderboard.sort((a, b) => b.score - a.score);
+        localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
+
+        container.innerHTML = `
+    <h2>انتهت المسابقة!</h2>
+    <div id="result">لقد حصلت على ${score} / ${
+          questionsShuffled.length
+        } نقاط</div>
+    <div id="leaderboard">
+      <h3>Leaderboard:</h3>
+      <ol>
+        ${leaderboard
+          .map((item) => `<li>${item.name} - ${item.score}</li>`)
+          .join("")}
+      </ol>
+    </div>
+    <button onclick="restart()">إعادة المسابقة</button>
+  `;
+      }
+
+      function restart() {
+        location.reload();
       }
     </script>
   </body>
