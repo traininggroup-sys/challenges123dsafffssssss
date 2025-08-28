@@ -578,6 +578,9 @@
             playerId = null;
             playerName = "";
 
+            // ❌ أوقف أي صوت شغال
+            stopAllSounds();
+
             // رجّع المستخدم لشاشة الترحيب
             quizCard.classList.add("hidden");
             welcomeCard.classList.remove("hidden");
@@ -590,6 +593,7 @@
           }
         });
       }
+
       window.addEventListener("beforeunload", () => {
         if (playerId) {
           db.ref(`liveQuiz/players/${playerId}`).remove();
@@ -625,6 +629,11 @@
           );
         },
       };
+      function stopAllSounds() {
+        try {
+          ctx.close(); // يقفل كل الأصوات
+        } catch (e) {}
+      }
 
       /* ========== انضمام ========== */
       joinBtn.addEventListener("click", async () => {
