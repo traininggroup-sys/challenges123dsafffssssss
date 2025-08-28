@@ -88,8 +88,35 @@
       <button id="participateBtn">المشاركة</button>
     </div>
 
-    <script>
-      // الأسئلة
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        push,
+        onValue,
+        query,
+        orderByChild,
+        limitToLast,
+      } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+      // ======= إعداد Firebase =======
+      const firebaseConfig = {
+        apiKey: "AIzaSyDOQ1wpof7OhyRRCD_0Of0RY0jggnHmSJ4",
+        authDomain: "test-competion.firebaseapp.com",
+        databaseURL: "https://test-competion-default-rtdb.firebaseio.com",
+        projectId: "test-competion",
+        storageBucket: "test-competion.firebasestorage.app",
+        messagingSenderId: "605584028373",
+        appId: "1:605584028373:web:9cfc40fad5bf6356dbe85c",
+        measurementId: "G-7WEQBFVEJW",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+
+      // ======= أسئلة المسابقة =======
       const questions = [
         {
           question: "ما هي عاصمة مصر؟",
@@ -121,35 +148,36 @@
       let currentIndex = 0;
       let score = 0;
       let timer;
-      const timePerQuestion = 15; // ثواني لكل سؤال
+      const timePerQuestion = 15;
       let playerName = "";
       let questionsShuffled = [];
 
       const container = document.getElementById("quizContainer");
       const participateBtn = document.getElementById("participateBtn");
 
+      // ======= أصوات حماسية =======
+      const correctSound = new Audio(
+        "https://www.fesliyanstudios.com/play-mp3/387"
+      );
+      const wrongSound = new Audio(
+        "https://www.fesliyanstudios.com/play-mp3/404"
+      );
+      const timeUpSound = new Audio(
+        "https://www.fesliyanstudios.com/play-mp3/6606"
+      );
+
+      // ======= زر المشاركة =======
       participateBtn.addEventListener("click", () => {
         playerName = prompt("ادخل اسمك للمشاركة:") || "لاعب مجهول";
         startQuiz();
       });
 
-      // أصوات
-      const correctSound = new Audio(
-        "https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
-      );
-      const wrongSound = new Audio(
-        "https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"
-      );
-      const timeUpSound = new Audio(
-        "https://actions.google.com/sounds/v1/cartoon/slide_whistle_to_drum_hit.ogg"
-      );
-
-      // خلط الأسئلة
+      // ======= خلط الأسئلة =======
       function shuffle(array) {
         return array.sort(() => Math.random() - 0.5);
       }
 
-      // بدء المسابقة
+      // ======= بدء المسابقة =======
       function startQuiz() {
         currentIndex = 0;
         score = 0;
@@ -157,7 +185,7 @@
         showQuestion();
       }
 
-      // عرض السؤال
+      // ======= عرض السؤال =======
       function showQuestion() {
         if (currentIndex >= questionsShuffled.length) {
           endQuiz();
@@ -175,7 +203,10 @@
           `<div class="option" onclick="selectOption('${opt}')">${opt}</div>`
       )
       .join("")}
+    <div id="leaderboard"><h3>Leaderboard:</h3><ol id="leaderboardList"></ol></div>
   `;
+
+        updateLeaderboard();
 
         let timeLeft = timePerQuestion;
         timer = setInterval(() => {
@@ -192,8 +223,8 @@
         }, 1000);
       }
 
-      // اختيار الإجابة
-      function selectOption(selected) {
+      // ======= اختيار الإجابة =======
+      window.selectOption = function (selected) {
         clearInterval(timer);
         const q = questionsShuffled[currentIndex];
         const messageDiv = document.getElementById("message");
@@ -209,34 +240,41 @@
         }
         currentIndex++;
         setTimeout(showQuestion, 1000);
-      }
+      };
 
-      // إنهاء المسابقة وعرض leaderboard
+      // ======= إنهاء المسابقة وإرسال النتيجة =======
       function endQuiz() {
-        let leaderboard = JSON.parse(
-          localStorage.getItem("leaderboard") || "[]"
-        );
-        leaderboard.push({ name: playerName, score: score });
-        leaderboard.sort((a, b) => b.score - a.score);
-        localStorage.setItem("leaderboard", JSON.stringify(leaderboard));
-
+        push(ref(db, "leaderboard"), { name: playerName, score: score });
         container.innerHTML = `
     <h2>انتهت المسابقة!</h2>
-    <div id="result">لقد حصلت على ${score} / ${
-          questionsShuffled.length
-        } نقاط</div>
-    <div id="leaderboard">
-      <h3>Leaderboard:</h3>
-      <ol>
-        ${leaderboard
-          .map((item) => `<li>${item.name} - ${item.score}</li>`)
-          .join("")}
-      </ol>
-    </div>
+    <div id="result">لقد حصلت على ${score} / ${questionsShuffled.length} نقاط</div>
+    <div id="leaderboard"><h3>Leaderboard:</h3><ol id="leaderboardList"></ol></div>
     <button onclick="restart()">إعادة المسابقة</button>
   `;
+        updateLeaderboard();
       }
 
+      // ======= تحديث Leaderboard مباشر =======
+      function updateLeaderboard() {
+        const leaderboardList = document.getElementById("leaderboardList");
+        if (!leaderboardList) return;
+
+        const leaderboardRef = query(
+          ref(db, "leaderboard"),
+          orderByChild("score"),
+          limitToLast(10)
+        );
+        onValue(leaderboardRef, (snapshot) => {
+          const data = snapshot.val();
+          if (!data) return;
+          const sorted = Object.values(data).sort((a, b) => b.score - a.score);
+          leaderboardList.innerHTML = sorted
+            .map((item) => `<li>${item.name} - ${item.score}</li>`)
+            .join("");
+        });
+      }
+
+      // ======= إعادة المسابقة =======
       function restart() {
         location.reload();
       }
