@@ -9,9 +9,36 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-      /* ... كل الـ CSS كما هو ... */
+      /* ضع كل CSS كما في الكود الأصلي */
       .hidden {
         display: none;
+      }
+      .card {
+        border: 1px solid #ccc;
+        padding: 16px;
+        border-radius: 12px;
+        background: #fff;
+      }
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        background: #007bff;
+        color: #fff;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .leaders {
+        list-style: none;
+        padding: 0;
+      }
+      .aside {
+        margin-top: 24px;
+      }
+      input.input {
+        padding: 8px;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ccc;
       }
     </style>
   </head>
@@ -65,7 +92,10 @@
             </div>
           </div>
 
-          <div id="quizCard" class="card hidden"></div>
+          <div id="quizCard" class="card hidden">
+            <div id="questionText"></div>
+            <div id="answersContainer" style="margin-top: 12px"></div>
+          </div>
         </section>
 
         <!-- RIGHT -->
@@ -101,7 +131,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
-      // Firebase config
       const firebaseConfig = {
         apiKey: "AIzaSyDOQ1wpof7OhyRRCD_0Of0RY0jggnHmSJ4",
         authDomain: "test-competion.firebaseapp.com",
@@ -115,28 +144,28 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
 
-      // State
       let playerId = null,
-        playerName = "",
-        maxParticipants = 2;
+        playerName = "";
+      const maxParticipants = 2; // عدد اللاعبين لتبدأ المسابقة
 
       const $ = (sel) => document.querySelector(sel);
-      const welcomeCard = $("#welcomeCard"),
-        joinBtn = $("#joinBtn"),
-        nameInput = $("#nameInput"),
-        playersCount = $("#playersCount"),
-        waitingForStart = $("#waitingForStart"),
-        waitingText = $("#waitingText"),
-        requiredCount = $("#requiredCount"),
-        waitingProgress = $("#waitingProgress"),
-        quizCard = $("#quizCard"),
-        leaderList = $("#leaderList"),
-        statusShort = $("#statusShort"),
-        statusLabel = $("#statusLabel");
+      const welcomeCard = $("#welcomeCard");
+      const joinBtn = $("#joinBtn");
+      const nameInput = $("#nameInput");
+      const playersCount = $("#playersCount");
+      const waitingForStart = $("#waitingForStart");
+      const waitingText = $("#waitingText");
+      const requiredCount = $("#requiredCount");
+      const waitingProgress = $("#waitingProgress");
+      const quizCard = $("#quizCard");
+      const questionText = $("#questionText");
+      const answersContainer = $("#answersContainer");
+      const statusLabel = $("#statusLabel");
+      const statusShort = $("#statusShort");
+      const leaderList = $("#leaderList");
 
       requiredCount.innerText = maxParticipants;
 
-      // Questions
       const QUESTIONS = [
         {
           q: "ما هي عاصمة مصر؟",
@@ -151,70 +180,90 @@
         { q: "كم عدد قارات العالم؟", opts: ["5", "6", "7", "8"], a: 2 },
       ];
 
-      function startQuiz() {
-        quizCard.innerHTML = "";
-        if (QUESTIONS.length > 0) {
-          const q = QUESTIONS[0];
-          quizCard.innerHTML = `<h3>السؤال الأول:</h3>
-            <p>${q.q}</p>
-            <ul>
-              ${q.opts.map((o) => `<li>${o}</li>`).join("")}
-            </ul>`;
-        }
-        quizCard.classList.remove("hidden");
-        statusShort.innerText = "بدأت";
-        statusLabel.innerText = "بدأت";
-      }
+      // عند فتح الصفحة نمسح اللاعبين القدامى لتجربة جديدة
+      db.ref("liveQuiz/players").remove();
 
+      // عند تسجيل اللاعب
       joinBtn.addEventListener("click", async () => {
         const name =
           nameInput.value.trim() ||
           "لاعب_" + Math.floor(Math.random() * 900 + 100);
         playerName = name;
         localStorage.setItem("savedName", playerName);
-
         const key = db.ref("liveQuiz/players").push().key;
         playerId = key;
         await db.ref(`liveQuiz/players/${playerId}`).set({
           name: playerName,
+          score: 0,
+          currentQuestion: 0,
+          finished: false,
           joinedAt: Date.now(),
+          leftTab: false,
         });
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
         welcomeCard.style.display = "none";
       });
 
+      // متابعة اللاعبين وبدء المسابقة تلقائياً
       const playersRef = db.ref("liveQuiz/players");
+      let quizStarted = false;
+
       playersRef.on("value", (snap) => {
         const data = snap.val() || {};
-        const arr = Object.entries(data)
-          .filter(([id, v]) => v && v.name)
-          .map(([id, v]) => ({ id, name: v.name }));
-
+        const arr = Object.entries(data).map(([id, v]) => ({
+          id,
+          name: v.name,
+          score: v.score || 0,
+          finished: !!v.finished,
+        }));
         playersCount.innerText = arr.length;
 
-        // Leaderboard
+        // تحديث قائمة المتصدرين
         leaderList.innerHTML = "";
         arr.forEach((p) => {
           const li = document.createElement("li");
-          li.textContent = p.name;
+          li.innerText = p.name;
           leaderList.appendChild(li);
         });
 
-        // Waiting progress
-        const pct = Math.min(
-          100,
-          Math.round((arr.length / maxParticipants) * 100)
-        );
-        waitingProgress.style.width = pct + "%";
-
-        if (arr.length < maxParticipants) {
-          waitingForStart.classList.remove("hidden");
-          waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${maxParticipants}`;
-        } else {
-          waitingForStart.classList.add("hidden");
-          startQuiz();
+        // التحقق من بداية المسابقة
+        if (!quizStarted) {
+          if (arr.length < maxParticipants) {
+            waitingForStart.classList.remove("hidden");
+            waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${maxParticipants}`;
+          } else {
+            waitingForStart.classList.add("hidden");
+            startQuiz(arr);
+          }
         }
       });
+
+      function startQuiz(players) {
+        quizStarted = true;
+        statusLabel.innerText = "بدأت";
+        statusShort.innerText = "بدأت";
+        quizCard.classList.remove("hidden");
+        showQuestion(0);
+      }
+
+      function showQuestion(index) {
+        if (index >= QUESTIONS.length) {
+          questionText.innerText = "انتهت المسابقة!";
+          answersContainer.innerHTML = "";
+          return;
+        }
+        const q = QUESTIONS[index];
+        questionText.innerText = `السؤال ${index + 1}: ${q.q}`;
+        answersContainer.innerHTML = "";
+        q.opts.forEach((opt, i) => {
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.style.margin = "4px";
+          btn.innerText = opt;
+          btn.onclick = () => showQuestion(index + 1);
+          answersContainer.appendChild(btn);
+        });
+      }
     </script>
   </body>
 </html>
