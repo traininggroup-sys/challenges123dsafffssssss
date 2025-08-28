@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>مسابقة أعضاء جروب المشتركين للتدريب</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>مسابقة حماسية</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap"
       rel="stylesheet"
@@ -12,101 +13,122 @@
       body {
         font-family: "Cairo", sans-serif;
         margin: 0;
-        background: #f8f8f8;
+        background: #f2f2f2;
       }
-      header,
-      footer {
-        background: #004aad;
+      header {
+        background: #4a90e2;
         color: #fff;
-        padding: 10px 20px;
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
       }
       main {
         display: flex;
-        gap: 20px;
         padding: 20px;
+        gap: 20px;
       }
       section {
         flex: 2;
       }
-      .aside {
+      aside {
         flex: 1;
       }
       .card {
         background: #fff;
         padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .input {
+        width: 100%;
+        padding: 8px;
+        margin-top: 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
       }
       .btn {
-        padding: 8px 16px;
-        border: none;
-        background: #004aad;
+        padding: 10px 20px;
+        background: #4a90e2;
         color: #fff;
+        border: none;
         border-radius: 5px;
         cursor: pointer;
       }
       .btn:hover {
-        background: #003380;
+        background: #357abd;
       }
       .hidden {
         display: none;
       }
-      .leaders li {
-        padding: 4px 0;
+      .answer {
+        padding: 8px;
+        margin-top: 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        transition: 0.2s;
       }
-      .options button {
-        display: block;
-        margin: 5px 0;
-        width: 100%;
-        text-align: right;
+      .answer:hover {
+        background: #e0e0e0;
       }
       .correct {
-        background-color: #4caf50;
+        background: #4caf50;
         color: #fff;
       }
       .wrong {
-        background-color: #f44336;
+        background: #f44336;
         color: #fff;
+      }
+      ol {
+        padding-left: 20px;
+      }
+      .leader {
+        padding: 5px 0;
+      }
+      .top {
+        font-weight: bold;
+        color: #ff9800;
       }
     </style>
   </head>
   <body>
-    <div class="app">
-      <header>
-        <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
-        <div>الحالة: <span id="statusShort">في انتظار</span></div>
-      </header>
+    <header>
+      <h1>مسابقة حماسية</h1>
+      <div id="statusLabel">في انتظار</div>
+    </header>
 
-      <main>
-        <section>
-          <div id="welcomeCard" class="card">
-            <h2>أهلاً بكم في المسابقة!</h2>
-            <input
-              id="nameInput"
-              class="input"
-              placeholder="اكتب اسمك (مثال: محمد)"
-            />
-            <button id="joinBtn" class="btn">المشاركة</button>
-            <div>متصلين الآن: <span id="playersCount">0</span></div>
+    <main>
+      <section>
+        <div id="welcomeCard" class="card">
+          <h2>أهلاً بك!</h2>
+          <input id="nameInput" class="input" placeholder="اكتب اسمك" />
+          <button id="joinBtn" class="btn">المشاركة</button>
+          <div style="margin-top: 10px">
+            متصلين الآن: <span id="playersCount">0</span>
           </div>
+        </div>
 
-          <div id="quizCard" class="card hidden">
-            <h2 id="questionText"></h2>
-            <div class="options" id="optionsContainer"></div>
-          </div>
-        </section>
+        <div id="quizCard" class="card hidden">
+          <h2 id="questionText">السؤال:</h2>
+          <div id="answers"></div>
+        </div>
+      </section>
 
-        <aside class="aside">
-          <div class="card">
-            <h3>الترتيب المباشر</h3>
-            <ol id="leaderList" class="leaders"></ol>
-          </div>
-        </aside>
-      </main>
+      <aside>
+        <div class="card">
+          <h3>الترتيب المباشر</h3>
+          <ol id="leaderList"></ol>
+        </div>
+      </aside>
+    </main>
 
-      <footer>© مسابقة أعضاء جروب المشتركين للتدريب</footer>
-    </div>
+    <footer class="card" style="text-align: center">© مسابقة حماسية</footer>
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -126,9 +148,19 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
 
-      let playerId = null,
-        playerName = "",
-        currentQuestionIndex = 0;
+      let playerId = null;
+      let playerName = "";
+      const $ = (sel) => document.querySelector(sel);
+      const joinBtn = $("#joinBtn"),
+        nameInput = $("#nameInput");
+      const welcomeCard = $("#welcomeCard"),
+        quizCard = $("#quizCard");
+      const playersCount = $("#playersCount"),
+        leaderList = $("#leaderList");
+      const questionText = $("#questionText"),
+        answersDiv = $("#answers");
+      const statusLabel = $("#statusLabel");
+
       const QUESTIONS = [
         {
           q: "ما هي عاصمة مصر؟",
@@ -136,30 +168,13 @@
           a: 0,
         },
         {
-          q: "من هو مؤسس شركة مايكروسوفت؟",
+          q: "من هو مؤسس مايكروسوفت؟",
           opts: ["بيل جيتس", "ستيف جوبز", "إيلون ماسك", "مارك زوكربيرج"],
           a: 0,
         },
         { q: "كم عدد قارات العالم؟", opts: ["5", "6", "7", "8"], a: 2 },
       ];
 
-      const $ = (sel) => document.querySelector(sel);
-      const welcomeCard = $("#welcomeCard");
-      const joinBtn = $("#joinBtn"),
-        nameInput = $("#nameInput");
-      const playersCount = $("#playersCount");
-      const quizCard = $("#quizCard");
-      const questionText = $("#questionText"),
-        optionsContainer = $("#optionsContainer");
-      const leaderList = $("#leaderList");
-      const statusShort = $("#statusShort");
-
-      // الصوت الاحتفالي
-      const cheerSound = new Audio(
-        "https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"
-      );
-
-      // انضمام اللاعب
       joinBtn.addEventListener("click", async () => {
         const name =
           nameInput.value.trim() ||
@@ -169,78 +184,59 @@
         playerId = key;
         await db
           .ref(`liveQuiz/players/${playerId}`)
-          .set({
-            name: playerName,
-            score: 0,
-            currentQuestion: 0,
-            finished: false,
-          });
+          .set({ name: playerName, score: 0, current: 0, finished: false });
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
         welcomeCard.classList.add("hidden");
         quizCard.classList.remove("hidden");
-        statusShort.innerText = "بدأت";
-        renderQuestion();
       });
 
-      function renderQuestion() {
-        const q = QUESTIONS[currentQuestionIndex];
-        questionText.innerText = `السؤال ${currentQuestionIndex + 1}: ${q.q}`;
-        optionsContainer.innerHTML = "";
-        q.opts.forEach((opt, i) => {
-          const btn = document.createElement("button");
-          btn.innerText = opt;
-          btn.addEventListener("click", () => checkAnswer(i));
-          optionsContainer.appendChild(btn);
-        });
-      }
-
-      async function checkAnswer(selectedIndex) {
-        const q = QUESTIONS[currentQuestionIndex];
-        const buttons = optionsContainer.querySelectorAll("button");
-        buttons.forEach(
-          (btn, i) =>
-            (btn.className =
-              i === q.a ? "correct" : i === selectedIndex ? "wrong" : "")
-        );
-        if (selectedIndex === q.a) {
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-          cheerSound.play();
-          const playerRef = db.ref(`liveQuiz/players/${playerId}`);
-          await playerRef.transaction((p) => {
-            if (p) {
-              p.score = (p.score || 0) + 1;
-            }
-            return p;
-          });
-        }
-        currentQuestionIndex++;
-        if (currentQuestionIndex < QUESTIONS.length) {
-          setTimeout(renderQuestion, 800);
-        } else {
-          questionText.innerText = "انتهت المسابقة!";
-          optionsContainer.innerHTML = "";
-        }
-      }
-
-      // تحديث قائمة المتسابقين مباشرة
+      const liveRef = db.ref("liveQuiz");
       const playersRef = db.ref("liveQuiz/players");
+
       playersRef.on("value", (snap) => {
         const data = snap.val() || {};
-        const arr = Object.entries(data).map(([id, v]) => ({
-          id,
-          name: v.name,
-          score: v.score || 0,
-        }));
+        const arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
         playersCount.innerText = arr.length;
+
+        // تحديث الترتيب
         leaderList.innerHTML = "";
         arr
           .sort((a, b) => b.score - a.score)
-          .forEach((p) => {
+          .forEach((p, i) => {
             const li = document.createElement("li");
-            li.innerText = p.name + " (" + p.score + ")";
+            li.innerText = p.name;
+            if (i === 0) li.classList.add("top");
             leaderList.appendChild(li);
           });
+
+        if (arr.length >= 2) {
+          // تبدأ المسابقة مع 2 لاعبين
+          statusLabel.innerText = "بدأت";
+          if (!window.currentIndex) window.currentIndex = 0;
+          showQuestion();
+        }
       });
+
+      function showQuestion() {
+        const q = QUESTIONS[window.currentIndex];
+        if (!q) return;
+        questionText.innerText = "السؤال: " + q.q;
+        answersDiv.innerHTML = "";
+        q.opts.forEach((opt, i) => {
+          const btn = document.createElement("div");
+          btn.classList.add("answer");
+          btn.innerText = opt;
+          btn.addEventListener("click", () => {
+            if (i === q.a) btn.classList.add("correct"), confetti();
+            else btn.classList.add("wrong");
+            setTimeout(() => {
+              window.currentIndex++;
+              showQuestion();
+            }, 800);
+          });
+          answersDiv.appendChild(btn);
+        });
+      }
     </script>
   </body>
 </html>
