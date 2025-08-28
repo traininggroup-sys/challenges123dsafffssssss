@@ -143,11 +143,20 @@
       const db = firebase.database();
 
       const audioCorrect = new Audio(
-        "https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
+        "https://freesound.org/data/previews/320/320181_5260878-lq.mp3"
       );
       const audioWrong = new Audio(
-        "https://actions.google.com/sounds/v1/cartoon/boing.ogg"
+        "https://freesound.org/data/previews/250/250629_4486188-lq.mp3"
       );
+
+      // عند اختيار الإجابة
+      function handleAnswer(isCorrect) {
+        if (isCorrect) {
+          audioCorrect.play();
+        } else {
+          audioWrong.play();
+        }
+      }
 
       const $ = (s) => document.querySelector(s);
       const welcomeCard = $("#welcomeCard");
