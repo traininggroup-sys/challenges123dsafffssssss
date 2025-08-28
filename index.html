@@ -631,8 +631,11 @@
       };
       function stopAllSounds() {
         try {
-          ctx.close(); // يقفل كل الأصوات
+          ctx.close(); // يقفل كل الأصوات الحالية
         } catch (e) {}
+
+        // ✨ إعادة إنشاء AudioContext جديد عشان يشتغل تاني لو اللاعب رجع
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
       }
 
       /* ========== انضمام ========== */
