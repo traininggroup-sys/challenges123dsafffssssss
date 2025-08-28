@@ -9,26 +9,66 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-      /* ... كل الـ CSS كما هو في الكود الأصلي ... */
+      body {
+        font-family: "Cairo", sans-serif;
+        background: #f0f0f0;
+        margin: 0;
+        padding: 0;
+      }
+      .app {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      header,
+      footer {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .card {
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
       .hidden {
         display: none;
+      }
+      input.input {
+        width: 80%;
+        padding: 8px;
+        margin-bottom: 10px;
+      }
+      button.btn {
+        padding: 8px 16px;
+        cursor: pointer;
+      }
+      .leaders {
+        padding-left: 20px;
+      }
+      .progress {
+        width: 100%;
+        background: #ddd;
+        height: 6px;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .progress i {
+        display: block;
+        height: 100%;
+        background: #4caf50;
+        width: 0%;
       }
     </style>
   </head>
   <body>
     <div class="app" role="application">
       <header>
-        <div>
-          <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
-          <div class="small muted-small" id="topicLabel">المحور: عام</div>
-        </div>
-        <div class="small muted-small" id="topRightInfo">
-          الحالة: <span id="statusShort">في انتظار</span>
-        </div>
+        <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
+        <div class="small muted-small" id="topicLabel">المحور: عام</div>
       </header>
 
       <main>
-        <!-- LEFT -->
         <section>
           <div id="welcomeCard" class="card welcome">
             <h2>أهلاً بكم في المسابقة!</h2>
@@ -56,7 +96,7 @@
               <div class="wait-box card">
                 <div id="waitingText">في انتظار اكتمال العدد للمشاركة...</div>
                 <div style="margin-top: 8px" class="meta">
-                  المطلوب: <b id="requiredCount">—</b>
+                  المطلوب: <b id="requiredCount">2</b>
                 </div>
                 <div style="margin-top: 8px" class="progress" aria-hidden>
                   <i id="waitingProgress"></i>
@@ -66,32 +106,15 @@
           </div>
 
           <div id="quizCard" class="card hidden">
-            <!-- محتوى المسابقة كما هو -->
-            <h2>المسابقة بدأت!</h2>
+            <h3>المسابقة بدأت!</h3>
+            <p id="quizContent">الأسئلة ستظهر هنا لاحقاً...</p>
           </div>
         </section>
 
-        <!-- RIGHT -->
         <aside class="aside">
           <div class="card">
             <h3>الترتيب المباشر</h3>
             <ol id="leaderList" class="leaders" style="margin-top: 10px"></ol>
-            <div style="margin-top: 12px" class="smallMuted">
-              المتسابقون يظهرون هنا مباشرةً
-            </div>
-          </div>
-
-          <div class="card" style="margin-top: 12px">
-            <h3>حالة المسابقة</h3>
-            <div class="smallMuted">
-              الحالة: <b id="statusLabel">في انتظار</b>
-            </div>
-            <div style="margin-top: 6px" class="smallMuted">
-              الوقت الكلي: <b id="totalTimeLabel">—</b>
-            </div>
-            <div style="margin-top: 6px" class="smallMuted">
-              المتصدّر: <b id="topBadge">—</b>
-            </div>
           </div>
         </aside>
       </main>
@@ -104,7 +127,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
-      // Firebase config
       const firebaseConfig = {
         apiKey: "AIzaSyDOQ1wpof7OhyRRCD_0Of0RY0jggnHmSJ4",
         authDomain: "test-competion.firebaseapp.com",
@@ -118,79 +140,71 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
 
-      // كل مسابقة جديدة جلسة جديدة
-      const sessionId = "session_" + Date.now();
-      const sessionRef = db.ref(`liveQuiz/${sessionId}`);
-      const playersRef = sessionRef.child("players");
-
       let playerId = null,
-        playerName = "",
-        maxParticipants = 2;
+        playerName = "";
+      const maxParticipants = 2;
 
       const $ = (sel) => document.querySelector(sel);
-      const welcomeCard = $("#welcomeCard");
-      const joinBtn = $("#joinBtn"),
+      const welcomeCard = $("#welcomeCard"),
+        joinBtn = $("#joinBtn"),
         nameInput = $("#nameInput"),
-        playersCount = $("#playersCount");
-      const waitingForStart = $("#waitingForStart"),
+        playersCount = $("#playersCount"),
+        waitingForStart = $("#waitingForStart"),
         waitingText = $("#waitingText"),
         requiredCount = $("#requiredCount"),
-        waitingProgress = $("#waitingProgress");
-      const quizCard = $("#quizCard");
+        waitingProgress = $("#waitingProgress"),
+        quizCard = $("#quizCard"),
+        leaderList = $("#leaderList");
 
-      requiredCount.innerText = maxParticipants;
-
-      // Join
       joinBtn.addEventListener("click", async () => {
         const name =
           nameInput.value.trim() ||
           "لاعب_" + Math.floor(Math.random() * 900 + 100);
         playerName = name;
-        localStorage.setItem("savedName", playerName);
-
-        const key = playersRef.push().key;
+        const key = db.ref("liveQuiz/players").push().key;
         playerId = key;
-        await playersRef.child(playerId).set({
+        await db.ref(`liveQuiz/players/${playerId}`).set({
           name: playerName,
           score: 0,
-          currentQuestion: 0,
           finished: false,
           joinedAt: Date.now(),
-          leftTab: false,
         });
-
-        // إزالة اللاعب لو أغلق الصفحة
-        playersRef.child(playerId).onDisconnect().remove();
+        db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
         welcomeCard.style.display = "none";
       });
 
-      // Listen players & auto-start
+      const playersRef = db.ref("liveQuiz/players");
+
       playersRef.on("value", (snap) => {
         const data = snap.val() || {};
         const arr = Object.entries(data).map(([id, v]) => ({
           id,
           name: v.name,
-          score: v.score || 0,
-          finished: !!v.finished,
         }));
         playersCount.innerText = arr.length;
 
+        // Progress bar
         const pct = Math.min(
           100,
           Math.round((arr.length / maxParticipants) * 100)
         );
         waitingProgress.style.width = pct + "%";
-
         if (arr.length < maxParticipants) {
           waitingForStart.classList.remove("hidden");
           waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${maxParticipants}`;
+          quizCard.classList.add("hidden");
         } else {
           waitingForStart.classList.add("hidden");
-          // بدء المسابقة
           quizCard.classList.remove("hidden");
-          $("#statusLabel").innerText = "بدأت";
-          $("#statusShort").innerText = "بدأت";
         }
+
+        // Update leaderboard
+        leaderList.innerHTML = "";
+        arr.forEach((p) => {
+          const li = document.createElement("li");
+          li.textContent = p.name;
+          leaderList.appendChild(li);
+        });
       });
     </script>
   </body>
