@@ -545,8 +545,6 @@
         doneBox = $("#doneBox");
       const leaderList = $("#leaderList"),
         topBadge = $("#topBadge");
-      let activeOscillators = [];
-      let activeTimeouts = [];
 
       /* ========== حالة محلية ========== */
       let playerId = null,
@@ -603,18 +601,11 @@
           osc.connect(g);
           g.connect(ctx.destination);
           osc.start();
-
-          // تخزين المرجع عشان نقدر نوقفه
-          activeOscillators.push(osc);
-
-          const t = setTimeout(() => {
+          setTimeout(() => {
             osc.stop();
-            activeOscillators = activeOscillators.filter((o) => o !== osc);
           }, ms);
-          activeTimeouts.push(t);
         } catch (e) {}
       }
-
       const sfx = {
         start: () => beep({ freq: 900, type: "triangle", ms: 200 }),
         correct: () => {
@@ -630,26 +621,11 @@
         },
       };
       function stopAllSounds() {
-        // وقف كل Oscillators
-        activeOscillators.forEach((osc) => {
-          try {
-            osc.stop();
-          } catch (e) {}
-        });
-        activeOscillators = [];
-
-        // امسح كل التايم أوت
-        activeTimeouts.forEach((t) => clearTimeout(t));
-        activeTimeouts = [];
-
-        // قفل الـ context
         if (ctx && ctx.state !== "closed") {
           ctx.close();
         }
-
-        // جهّز واحد جديد (عشان لو رجع يلعب تاني)
-        ctx = new AudioCtx();
-        audioUnlocked = false;
+        ctx = new AudioCtx(); // نعيد تهيئة السياق بعد الإغلاق
+        audioUnlocked = false; // نرجع كأنه لسه ما اتفعلش
       }
 
       /* ========== انضمام ========== */
