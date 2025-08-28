@@ -216,9 +216,11 @@
           score: v.score || 0,
           finished: !!v.finished,
         }));
+
+        // تحديث عدد اللاعبين
         playersCount.innerText = arr.length;
 
-        // تحديث قائمة المتصدرين
+        // تحديث قائمة المتصدرين لكل الأجهزة
         leaderList.innerHTML = "";
         arr.forEach((p) => {
           const li = document.createElement("li");
@@ -226,7 +228,7 @@
           leaderList.appendChild(li);
         });
 
-        // التحقق من بداية المسابقة
+        // عرض لوحة الانتظار أو بدء المسابقة
         if (!quizStarted) {
           if (arr.length < maxParticipants) {
             waitingForStart.classList.remove("hidden");
