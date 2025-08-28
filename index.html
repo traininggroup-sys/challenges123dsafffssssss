@@ -12,164 +12,95 @@
       body {
         font-family: "Cairo", sans-serif;
         margin: 0;
-        background: #f9f9f9;
+        background: #f8f8f8;
       }
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 20px;
-        background: #4a90e2;
-        color: white;
-      }
-      header h1 {
-        margin: 0;
-        font-size: 1.4rem;
+      header,
+      footer {
+        background: #004aad;
+        color: #fff;
+        padding: 10px 20px;
       }
       main {
         display: flex;
         gap: 20px;
         padding: 20px;
-        flex-wrap: wrap;
       }
-      section,
-      aside {
+      section {
+        flex: 2;
+      }
+      .aside {
         flex: 1;
-        min-width: 300px;
       }
       .card {
-        background: white;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-      .card h2,
-      .card h3 {
-        margin-top: 0;
-      }
-      .input {
-        width: 100%;
-        padding: 8px;
-        font-size: 1rem;
-        border-radius: 6px;
-        border: 1px solid #ccc;
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
       }
       .btn {
         padding: 8px 16px;
-        background: #4a90e2;
-        color: white;
         border: none;
-        border-radius: 6px;
+        background: #004aad;
+        color: #fff;
+        border-radius: 5px;
         cursor: pointer;
-        transition: background 0.2s;
       }
       .btn:hover {
-        background: #357ab8;
+        background: #003380;
       }
       .hidden {
         display: none;
       }
       .leaders li {
         padding: 4px 0;
-        display: flex;
-        justify-content: space-between;
       }
-      .leaders li.top {
-        color: #ff5722;
-        font-weight: bold;
-      }
-      .quiz-options button {
+      .options button {
         display: block;
+        margin: 5px 0;
         width: 100%;
-        margin: 6px 0;
-        padding: 8px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        cursor: pointer;
-        transition: 0.2s;
+        text-align: right;
       }
-      .quiz-options button.correct {
-        background: #4caf50;
-        color: white;
-        border-color: #4caf50;
+      .correct {
+        background-color: #4caf50;
+        color: #fff;
       }
-      .quiz-options button.wrong {
-        background: #f44336;
-        color: white;
-        border-color: #f44336;
+      .wrong {
+        background-color: #f44336;
+        color: #fff;
       }
     </style>
   </head>
   <body>
-    <div class="app" role="application">
+    <div class="app">
       <header>
-        <div>
-          <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
-          <div class="small muted-small" id="topicLabel">المحور: عام</div>
-        </div>
-        <div class="small muted-small" id="topRightInfo">
-          الحالة: <span id="statusShort">في انتظار</span>
-        </div>
+        <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
+        <div>الحالة: <span id="statusShort">في انتظار</span></div>
       </header>
 
       <main>
         <section>
-          <div id="welcomeCard" class="card welcome">
+          <div id="welcomeCard" class="card">
             <h2>أهلاً بكم في المسابقة!</h2>
-            <p class="meta" id="welcomeMeta">اضغطي المشاركة للدخول.</p>
             <input
               id="nameInput"
               class="input"
               placeholder="اكتب اسمك (مثال: محمد)"
             />
-            <div
-              style="
-                margin-top: 12px;
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-                justify-content: center;
-              "
-            >
-              <button id="joinBtn" class="btn">المشاركة</button>
-            </div>
-            <div style="margin-top: 12px" class="meta">
-              متصلين الآن: <span id="playersCount">0</span>
-            </div>
-            <div id="waitingForStart" style="margin-top: 14px" class="hidden">
-              <div class="wait-box card">
-                <div id="waitingText">في انتظار اكتمال العدد للمشاركة...</div>
-                <div style="margin-top: 8px" class="meta">
-                  المطلوب: <b id="requiredCount">2</b>
-                </div>
-              </div>
-            </div>
+            <button id="joinBtn" class="btn">المشاركة</button>
+            <div>متصلين الآن: <span id="playersCount">0</span></div>
           </div>
 
           <div id="quizCard" class="card hidden">
-            <h2 id="questionText">السؤال الأول:</h2>
-            <div id="quizOptions" class="quiz-options"></div>
+            <h2 id="questionText"></h2>
+            <div class="options" id="optionsContainer"></div>
           </div>
         </section>
 
         <aside class="aside">
           <div class="card">
             <h3>الترتيب المباشر</h3>
-            <ol id="leaderList" class="leaders" style="margin-top: 10px"></ol>
-          </div>
-
-          <div class="card" style="margin-top: 12px">
-            <h3>حالة المسابقة</h3>
-            <div class="smallMuted">
-              الحالة: <b id="statusLabel">في انتظار</b>
-            </div>
-            <div style="margin-top: 6px" class="smallMuted">
-              الوقت الكلي: <b id="totalTimeLabel">—</b>
-            </div>
-            <div style="margin-top: 6px" class="smallMuted">
-              المتصدر: <b id="topBadge">—</b>
-            </div>
+            <ol id="leaderList" class="leaders"></ol>
           </div>
         </aside>
       </main>
@@ -196,25 +127,8 @@
       const db = firebase.database();
 
       let playerId = null,
-        playerName = "";
-      const maxParticipants = 2;
-
-      const $ = (sel) => document.querySelector(sel);
-      const welcomeCard = $("#welcomeCard");
-      const joinBtn = $("#joinBtn"),
-        nameInput = $("#nameInput");
-      const playersCount = $("#playersCount");
-      const waitingForStart = $("#waitingForStart");
-      const waitingText = $("#waitingText");
-      const requiredCount = $("#requiredCount");
-      const quizCard = $("#quizCard");
-      const questionText = $("#questionText");
-      const quizOptions = $("#quizOptions");
-      const leaderList = $("#leaderList");
-      const statusShort = $("#statusShort");
-      const statusLabel = $("#statusLabel");
-      const topBadge = $("#topBadge");
-
+        playerName = "",
+        currentQuestionIndex = 0;
       const QUESTIONS = [
         {
           q: "ما هي عاصمة مصر؟",
@@ -229,12 +143,28 @@
         { q: "كم عدد قارات العالم؟", opts: ["5", "6", "7", "8"], a: 2 },
       ];
 
+      const $ = (sel) => document.querySelector(sel);
+      const welcomeCard = $("#welcomeCard");
+      const joinBtn = $("#joinBtn"),
+        nameInput = $("#nameInput");
+      const playersCount = $("#playersCount");
+      const quizCard = $("#quizCard");
+      const questionText = $("#questionText"),
+        optionsContainer = $("#optionsContainer");
+      const leaderList = $("#leaderList");
+      const statusShort = $("#statusShort");
+
+      // الصوت الاحتفالي
+      const cheerSound = new Audio(
+        "https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"
+      );
+
+      // انضمام اللاعب
       joinBtn.addEventListener("click", async () => {
         const name =
           nameInput.value.trim() ||
           "لاعب_" + Math.floor(Math.random() * 900 + 100);
         playerName = name;
-        localStorage.setItem("savedName", playerName);
         const key = db.ref("liveQuiz/players").push().key;
         playerId = key;
         await db
@@ -242,15 +172,59 @@
           .set({
             name: playerName,
             score: 0,
+            currentQuestion: 0,
             finished: false,
-            joinedAt: Date.now(),
           });
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
-        welcomeCard.style.display = "none";
+        welcomeCard.classList.add("hidden");
+        quizCard.classList.remove("hidden");
+        statusShort.innerText = "بدأت";
+        renderQuestion();
       });
 
+      function renderQuestion() {
+        const q = QUESTIONS[currentQuestionIndex];
+        questionText.innerText = `السؤال ${currentQuestionIndex + 1}: ${q.q}`;
+        optionsContainer.innerHTML = "";
+        q.opts.forEach((opt, i) => {
+          const btn = document.createElement("button");
+          btn.innerText = opt;
+          btn.addEventListener("click", () => checkAnswer(i));
+          optionsContainer.appendChild(btn);
+        });
+      }
+
+      async function checkAnswer(selectedIndex) {
+        const q = QUESTIONS[currentQuestionIndex];
+        const buttons = optionsContainer.querySelectorAll("button");
+        buttons.forEach(
+          (btn, i) =>
+            (btn.className =
+              i === q.a ? "correct" : i === selectedIndex ? "wrong" : "")
+        );
+        if (selectedIndex === q.a) {
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+          cheerSound.play();
+          const playerRef = db.ref(`liveQuiz/players/${playerId}`);
+          await playerRef.transaction((p) => {
+            if (p) {
+              p.score = (p.score || 0) + 1;
+            }
+            return p;
+          });
+        }
+        currentQuestionIndex++;
+        if (currentQuestionIndex < QUESTIONS.length) {
+          setTimeout(renderQuestion, 800);
+        } else {
+          questionText.innerText = "انتهت المسابقة!";
+          optionsContainer.innerHTML = "";
+        }
+      }
+
+      // تحديث قائمة المتسابقين مباشرة
       const playersRef = db.ref("liveQuiz/players");
-      playersRef.on("value", async (snap) => {
+      playersRef.on("value", (snap) => {
         const data = snap.val() || {};
         const arr = Object.entries(data).map(([id, v]) => ({
           id,
@@ -258,45 +232,15 @@
           score: v.score || 0,
         }));
         playersCount.innerText = arr.length;
-
-        // Leaderboard
-        arr.sort((a, b) => b.score - a.score);
         leaderList.innerHTML = "";
-        arr.forEach((p, i) => {
-          const li = document.createElement("li");
-          li.innerText = `${p.name} (${p.score})`;
-          if (i === 0) li.classList.add("top");
-          leaderList.appendChild(li);
-        });
-        topBadge.innerText = arr[0]?.name || "—";
-
-        // Start quiz if enough players
-        if (arr.length >= maxParticipants) {
-          statusShort.innerText = "بدأت";
-          statusLabel.innerText = "بدأت";
-          showQuestion(0);
-        } else {
-          statusShort.innerText = "في انتظار";
-          statusLabel.innerText = "في انتظار";
-        }
-      });
-
-      function showQuestion(index) {
-        if (index >= QUESTIONS.length) return;
-        const q = QUESTIONS[index];
-        quizCard.classList.remove("hidden");
-        questionText.innerText = `السؤال ${index + 1}: ${q.q}`;
-        quizOptions.innerHTML = "";
-        q.opts.forEach((opt, i) => {
-          const btn = document.createElement("button");
-          btn.innerText = opt;
-          btn.addEventListener("click", () => {
-            if (i === q.a) btn.classList.add("correct");
-            else btn.classList.add("wrong");
+        arr
+          .sort((a, b) => b.score - a.score)
+          .forEach((p) => {
+            const li = document.createElement("li");
+            li.innerText = p.name + " (" + p.score + ")";
+            leaderList.appendChild(li);
           });
-          quizOptions.appendChild(btn);
-        });
-      }
+      });
     </script>
   </body>
 </html>
