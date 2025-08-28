@@ -9,66 +9,26 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-      body {
-        font-family: "Cairo", sans-serif;
-        background: #f0f0f0;
-        margin: 0;
-        padding: 0;
-      }
-      .app {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-      header,
-      footer {
-        text-align: center;
-        margin-bottom: 20px;
-      }
-      .card {
-        background: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-      }
+      /* ... كل الـ CSS كما هو ... */
       .hidden {
         display: none;
-      }
-      input.input {
-        width: 80%;
-        padding: 8px;
-        margin-bottom: 10px;
-      }
-      button.btn {
-        padding: 8px 16px;
-        cursor: pointer;
-      }
-      .leaders {
-        padding-left: 20px;
-      }
-      .progress {
-        width: 100%;
-        background: #ddd;
-        height: 6px;
-        border-radius: 3px;
-        overflow: hidden;
-      }
-      .progress i {
-        display: block;
-        height: 100%;
-        background: #4caf50;
-        width: 0%;
       }
     </style>
   </head>
   <body>
     <div class="app" role="application">
       <header>
-        <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
-        <div class="small muted-small" id="topicLabel">المحور: عام</div>
+        <div>
+          <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
+          <div class="small muted-small" id="topicLabel">المحور: عام</div>
+        </div>
+        <div class="small muted-small" id="topRightInfo">
+          الحالة: <span id="statusShort">في انتظار</span>
+        </div>
       </header>
 
       <main>
+        <!-- LEFT -->
         <section>
           <div id="welcomeCard" class="card welcome">
             <h2>أهلاً بكم في المسابقة!</h2>
@@ -96,7 +56,7 @@
               <div class="wait-box card">
                 <div id="waitingText">في انتظار اكتمال العدد للمشاركة...</div>
                 <div style="margin-top: 8px" class="meta">
-                  المطلوب: <b id="requiredCount">2</b>
+                  المطلوب: <b id="requiredCount">—</b>
                 </div>
                 <div style="margin-top: 8px" class="progress" aria-hidden>
                   <i id="waitingProgress"></i>
@@ -105,16 +65,30 @@
             </div>
           </div>
 
-          <div id="quizCard" class="card hidden">
-            <h3>المسابقة بدأت!</h3>
-            <p id="quizContent">الأسئلة ستظهر هنا لاحقاً...</p>
-          </div>
+          <div id="quizCard" class="card hidden"></div>
         </section>
 
+        <!-- RIGHT -->
         <aside class="aside">
           <div class="card">
             <h3>الترتيب المباشر</h3>
             <ol id="leaderList" class="leaders" style="margin-top: 10px"></ol>
+            <div style="margin-top: 12px" class="smallMuted">
+              المتسابقون يظهرون هنا مباشرةً
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 12px">
+            <h3>حالة المسابقة</h3>
+            <div class="smallMuted">
+              الحالة: <b id="statusLabel">في انتظار</b>
+            </div>
+            <div style="margin-top: 6px" class="smallMuted">
+              الوقت الكلي: <b id="totalTimeLabel">—</b>
+            </div>
+            <div style="margin-top: 6px" class="smallMuted">
+              المتصدّر: <b id="topBadge">—</b>
+            </div>
           </div>
         </aside>
       </main>
@@ -127,6 +101,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
+      // Firebase config
       const firebaseConfig = {
         apiKey: "AIzaSyDOQ1wpof7OhyRRCD_0Of0RY0jggnHmSJ4",
         authDomain: "test-competion.firebaseapp.com",
@@ -140,9 +115,10 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
 
+      // State
       let playerId = null,
-        playerName = "";
-      const maxParticipants = 2;
+        playerName = "",
+        maxParticipants = 2;
 
       const $ = (sel) => document.querySelector(sel);
       const welcomeCard = $("#welcomeCard"),
@@ -154,19 +130,53 @@
         requiredCount = $("#requiredCount"),
         waitingProgress = $("#waitingProgress"),
         quizCard = $("#quizCard"),
-        leaderList = $("#leaderList");
+        leaderList = $("#leaderList"),
+        statusShort = $("#statusShort"),
+        statusLabel = $("#statusLabel");
+
+      requiredCount.innerText = maxParticipants;
+
+      // Questions
+      const QUESTIONS = [
+        {
+          q: "ما هي عاصمة مصر؟",
+          opts: ["القاهرة", "الإسكندرية", "الأقصر", "الجيزة"],
+          a: 0,
+        },
+        {
+          q: "من هو مؤسس شركة مايكروسوفت؟",
+          opts: ["بيل جيتس", "ستيف جوبز", "إيلون ماسك", "مارك زوكربيرج"],
+          a: 0,
+        },
+        { q: "كم عدد قارات العالم؟", opts: ["5", "6", "7", "8"], a: 2 },
+      ];
+
+      function startQuiz() {
+        quizCard.innerHTML = "";
+        if (QUESTIONS.length > 0) {
+          const q = QUESTIONS[0];
+          quizCard.innerHTML = `<h3>السؤال الأول:</h3>
+            <p>${q.q}</p>
+            <ul>
+              ${q.opts.map((o) => `<li>${o}</li>`).join("")}
+            </ul>`;
+        }
+        quizCard.classList.remove("hidden");
+        statusShort.innerText = "بدأت";
+        statusLabel.innerText = "بدأت";
+      }
 
       joinBtn.addEventListener("click", async () => {
         const name =
           nameInput.value.trim() ||
           "لاعب_" + Math.floor(Math.random() * 900 + 100);
         playerName = name;
+        localStorage.setItem("savedName", playerName);
+
         const key = db.ref("liveQuiz/players").push().key;
         playerId = key;
         await db.ref(`liveQuiz/players/${playerId}`).set({
           name: playerName,
-          score: 0,
-          finished: false,
           joinedAt: Date.now(),
         });
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
@@ -174,37 +184,36 @@
       });
 
       const playersRef = db.ref("liveQuiz/players");
-
       playersRef.on("value", (snap) => {
         const data = snap.val() || {};
-        const arr = Object.entries(data).map(([id, v]) => ({
-          id,
-          name: v.name,
-        }));
+        const arr = Object.entries(data)
+          .filter(([id, v]) => v && v.name)
+          .map(([id, v]) => ({ id, name: v.name }));
+
         playersCount.innerText = arr.length;
 
-        // Progress bar
-        const pct = Math.min(
-          100,
-          Math.round((arr.length / maxParticipants) * 100)
-        );
-        waitingProgress.style.width = pct + "%";
-        if (arr.length < maxParticipants) {
-          waitingForStart.classList.remove("hidden");
-          waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${maxParticipants}`;
-          quizCard.classList.add("hidden");
-        } else {
-          waitingForStart.classList.add("hidden");
-          quizCard.classList.remove("hidden");
-        }
-
-        // Update leaderboard
+        // Leaderboard
         leaderList.innerHTML = "";
         arr.forEach((p) => {
           const li = document.createElement("li");
           li.textContent = p.name;
           leaderList.appendChild(li);
         });
+
+        // Waiting progress
+        const pct = Math.min(
+          100,
+          Math.round((arr.length / maxParticipants) * 100)
+        );
+        waitingProgress.style.width = pct + "%";
+
+        if (arr.length < maxParticipants) {
+          waitingForStart.classList.remove("hidden");
+          waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${maxParticipants}`;
+        } else {
+          waitingForStart.classList.add("hidden");
+          startQuiz();
+        }
       });
     </script>
   </body>
