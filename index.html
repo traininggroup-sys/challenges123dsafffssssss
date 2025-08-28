@@ -350,6 +350,21 @@
                 </div>
               </div>
             </div>
+            <div id="doneBox" class="card hidden" style="margin-top: 12px">
+              <div class="center">
+                <strong>✅ انتهيت من إجاباتك.</strong>
+                <div class="meta" style="margin-top: 6px">
+                  انتظر زملائك لعرض النتائج النهائية.
+                </div>
+              </div>
+            </div>
+
+            <!-- زر الانسحاب -->
+            <div style="margin-top: 12px; text-align: center">
+              <button id="leaveBtn" class="btn" style="background: crimson">
+                انسحاب
+              </button>
+            </div>
           </div>
         </section>
 
@@ -530,6 +545,7 @@
         doneBox = $("#doneBox");
       const leaderList = $("#leaderList"),
         topBadge = $("#topBadge");
+      const leaveBtn = document.getElementById("leaveBtn");
 
       /* ========== حالة محلية ========== */
       let playerId = null,
@@ -539,8 +555,6 @@
         questionTimer = null,
         questionDeadline = null,
         started = false;
-
-      const leaveBtn = $("#leaveBtn"); // زر الانسحاب (ممكن يكون null لو مش ظاهر)
 
       /* ========== أصوات WebAudio (بدون روابط خارجية) ========== */
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -554,6 +568,33 @@
           .catch(() => {});
       }
       document.addEventListener("click", unlockAudio, { once: true });
+      if (leaveBtn) {
+        leaveBtn.addEventListener("click", async () => {
+          if (playerId) {
+            // امسح اللاعب من الداتا بيز
+            await db.ref(`liveQuiz/players/${playerId}`).remove();
+
+            // صفر البيانات المحلية
+            playerId = null;
+            playerName = "";
+
+            // رجّع المستخدم لشاشة الترحيب
+            quizCard.classList.add("hidden");
+            welcomeCard.classList.remove("hidden");
+
+            // (اختياري) تحديث حالة النصوص
+            const statusShort = document.getElementById("statusShort");
+            const statusLabel = document.getElementById("statusLabel");
+            if (statusShort) statusShort.innerText = "انسحبت";
+            if (statusLabel) statusLabel.innerText = "انسحبت من المسابقة";
+          }
+        });
+      }
+      window.addEventListener("beforeunload", () => {
+        if (playerId) {
+          db.ref(`liveQuiz/players/${playerId}`).remove();
+        }
+      });
 
       function beep({ freq = 600, type = "sine", ms = 200, gain = 0.06 } = {}) {
         try {
