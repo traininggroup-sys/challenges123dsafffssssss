@@ -4,345 +4,154 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>مسابقة أعضاء جروب المشتركين للتدريب</title>
-
     <link
       href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-
     <style>
-      :root {
-        --brand: #ff5722;
-        --brand2: #ff8a50;
-        --card: #fff;
-        --muted: #67748e;
-        --ok: #1faa59;
-        --bad: #e53935;
-        --bg1: #071426;
-        --bg2: #0b2b46;
-      }
-      * {
-        box-sizing: border-box;
-      }
       body {
-        margin: 0;
         font-family: "Cairo", sans-serif;
-        color: #0d1b2a;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(180deg, var(--bg1), var(--bg2));
-        padding: 18px;
-      }
-      .app {
-        width: 100%;
-        max-width: 1150px;
-        overflow: hidden;
-        border-radius: 16px;
-        background: linear-gradient(180deg, #fff, #fafafa);
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-      }
-      header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 16px 20px;
-        color: #fff;
-        background: linear-gradient(90deg, var(--brand), var(--brand2));
-      }
-      header h1 {
-        margin: 0;
-        font-size: 18px;
-      }
-      header .sub {
-        opacity: 0.95;
-        font-size: 13px;
-      }
-
-      main {
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        gap: 16px;
-        padding: 18px;
-      }
-      @media (max-width: 980px) {
-        main {
-          grid-template-columns: 1fr;
-        }
-        .aside {
-          order: 2;
-        }
-      }
-
-      .card {
-        background: var(--card);
-        border-radius: 14px;
-        padding: 16px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-      }
-      .welcome {
-        display: grid;
-        gap: 12px;
-        place-items: center;
-        padding: 28px;
-      }
-      .input {
-        width: 100%;
-        max-width: 320px;
-        padding: 12px 14px;
-        border-radius: 12px;
-        border: 1px solid #eee;
-        outline: none;
-        font-size: 16px;
-      }
-      .btn {
-        background: var(--brand);
-        color: #fff;
-        border: none;
-        padding: 12px 16px;
-        border-radius: 12px;
-        font-weight: 800;
-        cursor: pointer;
-        transition: 0.15s transform, 0.15s box-shadow;
-      }
-      .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
-      }
-      .meta {
-        color: var(--muted);
-        font-size: 13px;
-      }
-
-      .question {
-        font-size: 20px;
-        margin: 10px 0 6px;
-      }
-      .options {
-        display: grid;
-        gap: 10px;
-      }
-      .option {
-        background: #f6f8fa;
-        padding: 12px;
-        border-radius: 12px;
-        text-align: center;
-        font-weight: 800;
-        border: 2px solid transparent;
-        cursor: pointer;
-        transition: 0.16s;
-      }
-      .option:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
-      }
-      .option.correct {
-        background: #e8f8ef;
-        border-color: var(--ok);
-      }
-      .option.wrong {
-        background: #ffecec;
-        border-color: var(--bad);
-      }
-
-      .row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap; /* يخلي العناصر تنزل تحت بعض عند ضيق الشاشة */
-      }
-
-      @media (max-width: 600px) {
-        .row {
-          flex-direction: column; /* يخليهم فوق وتحت بدل جنب بعض */
-        }
-        .timerWrap {
-          align-self: center; /* يخلي العداد في النص */
-          margin-top: 12px;
-        }
-        .question {
-          font-size: 18px; /* نصغر الخط شوية عشان الموبايل */
-          line-height: 1.6;
-        }
-      }
-
-      .progress {
-        height: 10px;
-        background: #eee;
-        border-radius: 999px;
-        overflow: hidden;
-      }
-      .progress > i {
-        display: block;
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, var(--brand), var(--brand2));
-      }
-
-      .timerWrap {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-      }
-      .circle {
-        width: 74px;
-        height: 74px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        font-weight: 900;
-        color: var(--brand);
-        background: conic-gradient(var(--brand) 0deg, #eee 0deg);
-      }
-
-      .leaders {
-        list-style: none;
         margin: 0;
         padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+        background: #f3f3f3;
       }
-      .leader {
-        background: linear-gradient(180deg, #fff, #fafafa);
-        border-radius: 12px;
-        padding: 10px;
-        display: grid;
-        grid-template-columns: 32px 1fr auto;
-        gap: 10px;
-        align-items: center;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
-        font-weight: 800;
-      }
-      .leader .bar {
-        height: 8px;
-        background: #eee;
-        border-radius: 10px;
-        overflow: hidden;
-        margin-top: 6px;
-      }
-      .leader .bar > i {
-        display: block;
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, var(--brand), var(--brand2));
-      }
-      .crown {
-        font-size: 18px;
-      }
-      .rank1 {
-        background: linear-gradient(90deg, #ffd700, #ffcf5b);
-      }
-      .rank2 {
-        background: linear-gradient(90deg, #c0c0c0, #e6e6e6);
-      }
-      .rank3 {
-        background: linear-gradient(90deg, #cd7f32, #e0a67a);
-      }
-
-      .center {
+      header,
+      footer {
+        background: #0055aa;
+        color: white;
+        padding: 10px 20px;
         text-align: center;
+      }
+      main {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        max-width: 1200px;
+        margin: auto;
+        flex-wrap: wrap;
+      }
+      section,
+      aside {
+        flex: 1;
+        min-width: 280px;
+      }
+      .card {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
       }
       .hidden {
         display: none;
       }
+      .input {
+        width: 100%;
+        padding: 10px;
+        margin-top: 8px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+      }
+      .btn {
+        padding: 10px 15px;
+        border: none;
+        background: #0055aa;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background: #004080;
+      }
+      .answer {
+        padding: 10px;
+        margin: 6px 0;
+        background: #eee;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .answer.correct {
+        background: #4caf50;
+        color: white;
+      }
+      .answer.wrong {
+        background: #f44336;
+        color: white;
+      }
+      .leaders li.top {
+        font-weight: bold;
+        color: #ff9800;
+      }
+      /* تحسين للموبايل */
+      #questionBox {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      #timer {
+        font-size: 14px;
+        color: #f44336;
+        text-align: center;
+      }
     </style>
   </head>
   <body>
-    <div class="app" role="application">
-      <header>
-        <div>
-          <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
-          <div class="sub" id="topicLabel">المحور: عام</div>
+    <header>
+      <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
+      <div id="statusLabel">الحالة: في انتظار</div>
+    </header>
+
+    <main>
+      <section>
+        <!-- كارت الترحيب -->
+        <div id="welcomeCard" class="card">
+          <h2>أهلاً بك في المسابقة!</h2>
+          <input
+            id="nameInput"
+            class="input"
+            placeholder="اكتب اسمك (مثال: محمد)"
+          />
+          <div style="margin-top: 12px">
+            <button id="joinBtn" class="btn">🚀 المشاركة</button>
+          </div>
+          <p style="margin-top: 10px">
+            متصلين الآن: <span id="playersCount">0</span>
+          </p>
         </div>
-        <div class="sub">الحالة: <span id="statusShort">في انتظار</span></div>
-      </header>
 
-      <main>
-        <section>
-          <!-- بطاقة الترحيب -->
-          <!-- داخل بطاقة المسابقة -->
-          <div id="quizCard" class="card hidden">
-            <div class="row">
-              <div style="flex: 1">
-                <div class="meta" id="progressText">سؤال 0 / 0</div>
-                <div id="questionText" class="question">السؤال سيظهر هنا</div>
-                <div class="progress" style="margin-top: 8px">
-                  <i id="qProgress"></i>
-                </div>
-              </div>
-              <div class="timerWrap">
-                <div class="circle" id="circleTimer">--</div>
-                <div style="text-align: right">
-                  <div class="meta">الوقت المتبقي للسؤال</div>
-                  <div
-                    id="timeText"
-                    style="font-weight: 900; color: var(--brand)"
-                  >
-                    --
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div id="options" class="options" style="margin-top: 12px"></div>
-            <div
-              id="feedback"
-              class="meta"
-              style="margin-top: 8px; min-height: 20px"
-            ></div>
-
-            <div id="doneBox" class="card hidden" style="margin-top: 12px">
-              <div class="center">
-                <strong>✅ انتهيت من إجاباتك.</strong>
-                <div class="meta" style="margin-top: 6px">
-                  انتظر زملائك لعرض النتائج النهائية.
-                </div>
-              </div>
-            </div>
-
-            <!-- زرار الانسحاب -->
-            <div style="margin-top: 16px; text-align: center">
-              <button id="leaveBtn" class="btn" style="background: #e53935">
-                🚪 انسحاب من المسابقة
-              </button>
-            </div>
+        <!-- كارت المسابقة -->
+        <div id="quizCard" class="card hidden">
+          <div id="questionBox">
+            <h3 id="questionText">السؤال:</h3>
+            <div id="timer">الوقت: <span id="timeLeft">10</span> ث</div>
           </div>
-        </section>
+          <div id="answersDiv"></div>
+          <button
+            id="leaveBtn"
+            class="btn"
+            style="margin-top: 12px; background: #f44336"
+          >
+            🚪 انسحاب
+          </button>
+        </div>
+      </section>
 
-        <!-- جانب: ترتيب مباشر -->
-        <aside class="aside">
-          <div class="card">
-            <h3>الترتيب المباشر</h3>
-            <ol id="leaderList" class="leaders" style="margin-top: 10px"></ol>
-            <div class="meta" style="margin-top: 8px">
-              يشمل النقاط مباشرةً لتحفيز المنافسة
-            </div>
-          </div>
+      <aside>
+        <div class="card">
+          <h3>الترتيب المباشر</h3>
+          <ol id="leaderList"></ol>
+        </div>
+      </aside>
+    </main>
 
-          <div class="card" style="margin-top: 12px">
-            <h3>حالة المسابقة</h3>
-            <div class="meta">الحالة: <b id="statusLabel">في انتظار</b></div>
-            <div style="margin-top: 6px" class="meta">
-              المتصدر: <b id="topBadge">—</b>
-            </div>
-          </div>
-        </aside>
-      </main>
+    <footer>© مسابقة أعضاء جروب المشتركين للتدريب</footer>
 
-      <footer>© مسابقة أعضاء جروب المشتركين للتدريب</footer>
-    </div>
-
-    <!-- Firebase compat -->
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
-      /* ========== Firebase ========== */
       const firebaseConfig = {
         apiKey: "AIzaSyDOQ1wpof7OhyRRCD_0Of0RY0jggnHmSJ4",
         authDomain: "test-competion.firebaseapp.com",
@@ -355,10 +164,27 @@
       };
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
-      const liveRef = db.ref("liveQuiz");
-      const playersRef = db.ref("liveQuiz/players");
 
-      /* ========== أسئلة (مثال) ========== */
+      const audioCorrect = new Audio(
+        "https://www.soundjay.com/buttons/sounds/button-3.mp3"
+      );
+      const audioWrong = new Audio(
+        "https://www.soundjay.com/buttons/sounds/button-10.mp3"
+      );
+
+      const $ = (s) => document.querySelector(s);
+      const welcomeCard = $("#welcomeCard");
+      const joinBtn = $("#joinBtn");
+      const nameInput = $("#nameInput");
+      const playersCount = $("#playersCount");
+      const quizCard = $("#quizCard");
+      const questionText = $("#questionText");
+      const answersDiv = $("#answersDiv");
+      const leaderList = $("#leaderList");
+      const statusLabel = $("#statusLabel");
+      const leaveBtn = $("#leaveBtn");
+      const timeLeft = $("#timeLeft");
+
       const QUESTIONS = [
         {
           q: "أيُّ مما يلي ليس أداة نفي:",
@@ -372,467 +198,114 @@
         },
         {
           q: "اختر الجملة الصحيحة:",
-          opts: ["أنس بن مالك", "أنس ابن مالك", "أنس إبن مالك", "انس بن مالك"],
+          opts: ["أنس بن مالك", "أنس ابن مالك"],
           a: 0,
-        },
-        {
-          q: "اختر الكلمة الصحيحة:",
-          opts: ["أدعو", "أدعي"],
-          a: 0,
-        },
-        {
-          q: "حرف المد في كلمة (عود):",
-          opts: ["العين", "الواو", "دال"],
-          a: 1,
-        },
-        {
-          q: "الحرف الممدود في كلمة (عود):",
-          opts: ["العين", "الواو", "دال"],
-          a: 0,
-        },
-        {
-          q: "من الحروف التي تنصب المبتدأ ويسمى اسمها وترفع الخبر ويسمى خبرها:",
-          opts: ["كان", "أصبح", "إن"],
-          a: 2,
-        },
-        {
-          q: "مرفوع دائمًا:",
-          opts: ["المبتدأ", "الحال", "المضاف إليه"],
-          a: 0,
-        },
-        {
-          q: "جميع الكلمات الآتية بها مد ماعدا:",
-          opts: ["عود", "صوت", "بيوت", "توت"],
-          a: 1,
-        },
-        {
-          q: "إحدى الكلمات الآتية بها مد:",
-          opts: ["بيت", "صوت", "بنت", "عود"],
-          a: 3,
-        },
-        {
-          q: "اختر الجملة الصحيحة:",
-          opts: ["فهد تلميذٌ نجيبًا", "فهدٌ تلميذٌ نجيبٌ"],
-          a: 1,
-        },
-        {
-          q: "اختر الجملة الصحيحة:",
-          opts: [
-            "الطالبان يريدان أن ينجحان",
-            "الطالبان يريدان أن ينجحا",
-            "الطالبان يريدا أن ينجحا",
-          ],
-          a: 1,
-        },
-        {
-          q: "نون التوكيد تتصل بالفعل ..............",
-          opts: ["فقط الماضي", "الأمر فقط", "المضارع فقط", "المضارع والأمر"],
-          a: 3,
-        },
-        {
-          q: "اختر الكلمة الصحيحة:",
-          opts: ["ضغاؤن", "ضغائن", "ضغاءن"],
-          a: 1,
-        },
-        {
-          q: "اختر الجملة الصحيحة:",
-          opts: ["جاء الأمير أحمد", "جاء ألامير أحمد", "جاء الامير احمد"],
-          a: 0,
-        },
-        {
-          q: "تمييز المائة دائمًا .............",
-          opts: ["جمع مجرور", "مفرد منصوب", "مفرد مجرور"],
-          a: 2,
-        },
-        {
-          q: "تالله، لأعصين الشيطان ( )",
-          opts: [".", "،", "!"],
-          a: 0,
-        },
-        {
-          q: "الرفع في الأفعال ينفرد عن الأسماء بـ .............",
-          opts: ["الواو", "الألف", "ثبوت النون"],
-          a: 2,
-        },
-        {
-          q: "رأيتُ ................. الأطفال",
-          opts: ["هؤلاءَ", "هؤلاءِ", "هؤلاءُ"],
-          a: 1,
-        },
-        {
-          q: "صديقي يتحدث بـ ...........",
-          opts: ["ألاشارة", "الإشارة", "إلإشارة"],
-          a: 1,
         },
       ];
 
-      const REQUIRED_PLAYERS = 2; // التجربة تبدأ عند 2
-      const PER_QUESTION_SECONDS = 15; // 15 ثانية لكل سؤال
+      let playerId = null;
+      let playerName = "";
+      let currentIndex = null;
+      let timer = null;
+      let timePerQ = 10;
 
-      /* ========== عناصر واجهة ========== */
-      const $ = (s) => document.querySelector(s);
-      const welcomeCard = $("#welcomeCard"),
-        joinBtn = $("#joinBtn"),
-        nameInput = $("#nameInput"),
-        playersCount = $("#playersCount");
-      const waitingBox = $("#waitingBox"),
-        waitingText = $("#waitingText"),
-        waitingProgress = $("#waitingProgress");
-      const quizCard = $("#quizCard"),
-        questionText = $("#questionText"),
-        optionsWrap = $("#options"),
-        feedback = $("#feedback");
-      const progressText = $("#progressText"),
-        qProgress = $("#qProgress"),
-        statusShort = $("#statusShort"),
-        statusLabel = $("#statusLabel");
-      const circleTimer = $("#circleTimer"),
-        timeText = $("#timeText"),
-        doneBox = $("#doneBox");
-      const leaderList = $("#leaderList"),
-        topBadge = $("#topBadge");
-
-      /* ========== حالة محلية ========== */
-      let playerId = null,
-        playerName = "",
-        localScore = 0,
-        localIndex = 0,
-        questionTimer = null,
-        questionDeadline = null,
-        started = false;
-
-      /* ========== أصوات WebAudio (بدون روابط خارجية) ========== */
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      const ctx = new AudioCtx();
-      let audioUnlocked = false;
-      function unlockAudio() {
-        if (audioUnlocked) return;
-        ctx
-          .resume()
-          .then(() => (audioUnlocked = true))
-          .catch(() => {});
-      }
-      document.addEventListener("click", unlockAudio, { once: true });
-
-      function beep({ freq = 600, type = "sine", ms = 200, gain = 0.06 } = {}) {
-        try {
-          const osc = ctx.createOscillator();
-          const g = ctx.createGain();
-          osc.type = type;
-          osc.frequency.value = freq;
-          g.gain.value = gain;
-          osc.connect(g);
-          g.connect(ctx.destination);
-          osc.start();
-          setTimeout(() => {
-            osc.stop();
-          }, ms);
-        } catch (e) {}
-      }
-      const sfx = {
-        start: () => beep({ freq: 900, type: "triangle", ms: 200 }),
-        correct: () => {
-          beep({ freq: 880, type: "sine", ms: 140 });
-          setTimeout(() => beep({ freq: 1200, type: "sine", ms: 180 }), 120);
-        },
-        wrong: () => beep({ freq: 220, type: "sawtooth", ms: 260 }),
-        tick: () => beep({ freq: 520, type: "square", ms: 60, gain: 0.03 }),
-        win: () => {
-          [880, 990, 1180, 1320].forEach((f, i) =>
-            setTimeout(() => beep({ freq: f, type: "sine", ms: 160 }), i * 140)
-          );
-        },
-      };
-
-      /* ========== انضمام ========== */
       joinBtn.addEventListener("click", async () => {
-        unlockAudio();
         const name =
-          (nameInput.value || "").trim() ||
+          nameInput.value.trim() ||
           "لاعب_" + Math.floor(Math.random() * 900 + 100);
         playerName = name;
-        const key = playersRef.push().key;
+        const key = db.ref("liveQuiz/players").push().key;
         playerId = key;
         await db.ref(`liveQuiz/players/${playerId}`).set({
           name: playerName,
           score: 0,
-          currentQuestion: 0,
-          finished: false,
-          joinedAt: Date.now(),
         });
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
         welcomeCard.classList.add("hidden");
       });
 
-      /* ========== الترتيب المباشر + بدء تلقائي عند 2 ========== */
-      playersRef.on("value", async (snap) => {
-        const data = snap.val() || {};
-        const arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
-        playersCount.innerText = arr.length;
-
-        // شريط الانتظار
-        const pct = Math.min(
-          100,
-          Math.round((arr.length / REQUIRED_PLAYERS) * 100)
-        );
-        waitingProgress.style.width = pct + "%";
-        waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${REQUIRED_PLAYERS}`;
-
-        // ترتيب مباشر
-        renderLeaders(arr);
-
-        // ابدأ أول مرة فقط لما نوصل 2 وما يكونش بدأ
-        if (arr.length >= REQUIRED_PLAYERS) {
-          const live = (await liveRef.once("value")).val() || {};
-          if (live.status !== "started") {
-            await liveRef.update({ status: "started", startedAt: Date.now() });
-          }
+      leaveBtn.addEventListener("click", () => {
+        if (playerId) {
+          db.ref(`liveQuiz/players/${playerId}`).remove();
+          playerId = null;
+          location.reload();
         }
       });
 
-      /* ========== متابعة حالة الـ Live ========== */
-      liveRef.on("value", (snap) => {
-        const val = snap.val() || {};
-        const st = val.status || "waiting";
-        statusShort.innerText =
-          st === "started" ? "بدأت" : st === "ended" ? "انتهت" : "في انتظار";
-        statusLabel.innerText = statusShort.innerText;
-
-        if (st === "started" && !started) {
-          started = true;
-          startGame();
-        }
-        if (st === "ended") {
-          // تظهر النتيجة/الاحتفال يتم في finalize()
-        }
-      });
-
-      /* ========== بدء الجولة (لكل عميل) ========== */
-      function startGame() {
-        // إعادة تهيئة محلية
-        localScore = 0;
-        localIndex = 0;
-        quizCard.classList.remove("hidden");
-        welcomeCard.classList.add("hidden");
-        sfx.start();
-        renderQuestion();
-      }
-
-      /* ========== المؤقت لكل سؤال ========== */
-      function startQuestionTimer(totalSec = PER_QUESTION_SECONDS) {
-        stopQuestionTimer();
-        const endAt = Date.now() + totalSec * 1000;
-        questionDeadline = endAt;
-
-        questionTimer = setInterval(() => {
-          const remain = Math.max(
-            0,
-            Math.ceil((questionDeadline - Date.now()) / 1000)
-          );
-          timeText.innerText = remain + " ث";
-          // دائرة
-          const elapsed =
-            PER_QUESTION_SECONDS * 1000 -
-            Math.max(0, questionDeadline - Date.now());
-          const pct = Math.min(
-            100,
-            Math.round((elapsed / (PER_QUESTION_SECONDS * 1000)) * 100)
-          );
-          circleTimer.style.background = `conic-gradient(var(--brand) ${
-            pct * 3.6
-          }deg, #eee ${pct * 3.6}deg)`;
-          circleTimer.innerText = remain;
-
-          if (remain <= 5 && remain > 0) sfx.tick();
-
-          if (remain <= 0) {
-            stopQuestionTimer();
-            // بدون إجابة → ينتقل تلقائيًا للسؤال التالي
-            nextQuestion();
-          }
-        }, 200);
-      }
-      function stopQuestionTimer() {
-        if (questionTimer) {
-          clearInterval(questionTimer);
-          questionTimer = null;
-        }
-      }
-
-      /* ========== عرض سؤال/إجابات ========== */
-      let optionLock = false;
-      function renderQuestion() {
-        feedback.innerText = "";
-        doneBox.classList.add("hidden");
-
-        if (localIndex >= QUESTIONS.length) {
-          // خلّصنا
-          finishLocal();
+      function showQuestion() {
+        clearInterval(timer);
+        const q = QUESTIONS[currentIndex];
+        if (!q) {
+          statusLabel.innerText = "الحالة: انتهت";
+          quizCard.classList.add("hidden");
           return;
         }
+        quizCard.classList.remove("hidden");
+        questionText.innerText = "السؤال: " + q.q;
+        answersDiv.innerHTML = "";
 
-        const q = QUESTIONS[localIndex];
-        questionText.innerText = q.q;
-        optionsWrap.innerHTML = "";
-        optionLock = false;
+        // المؤقت
+        let t = timePerQ;
+        timeLeft.innerText = t;
+        timer = setInterval(() => {
+          t--;
+          timeLeft.innerText = t;
+          if (t <= 0) {
+            clearInterval(timer);
+            currentIndex++;
+            showQuestion();
+          }
+        }, 1000);
 
-        // تحديث شريط التقدم
-        progressText.innerText = `سؤال ${localIndex + 1} / ${QUESTIONS.length}`;
-        qProgress.style.width =
-          Math.round((localIndex / QUESTIONS.length) * 100) + "%";
-
-        // خيارات (shuffle بسيط)
-        const opts = q.opts
-          .map((o, i) => ({ o, i }))
-          .sort(() => Math.random() - 0.5);
-        opts.forEach(({ o, i }) => {
-          const div = document.createElement("div");
-          div.className = "option";
-          div.innerText = o;
-          div.onclick = async () => {
-            if (optionLock) return;
-            optionLock = true;
-
+        q.opts.forEach((opt, i) => {
+          const btn = document.createElement("div");
+          btn.classList.add("answer");
+          btn.innerText = opt;
+          btn.addEventListener("click", async () => {
+            if (answersDiv.querySelector(".correct,.wrong")) return;
             if (i === q.a) {
-              div.classList.add("correct");
-              feedback.innerText = "إجابة صحيحة ✅";
-              sfx.correct();
+              btn.classList.add("correct");
+              audioCorrect.play();
+              confetti({ particleCount: 100, spread: 70 });
               await db
                 .ref(`liveQuiz/players/${playerId}/score`)
                 .transaction((s) => (s || 0) + 1);
             } else {
-              div.classList.add("wrong");
-              feedback.innerText = `خطأ ❌ الإجابة الصحيحة: ${q.opts[q.a]}`;
-              sfx.wrong();
-              // إبراز الصح
-              Array.from(optionsWrap.children).forEach((c) => {
-                if (c.innerText === q.opts[q.a]) c.classList.add("correct");
-              });
+              btn.classList.add("wrong");
+              audioWrong.play();
             }
-
-            // حدّث موضع السؤال في قاعدة البيانات (اختياري للعرض)
-            await db
-              .ref(`liveQuiz/players/${playerId}`)
-              .update({ currentQuestion: localIndex + 1 });
-
-            setTimeout(() => nextQuestion(), 900);
-          };
-          optionsWrap.appendChild(div);
+            clearInterval(timer);
+            setTimeout(() => {
+              currentIndex++;
+              showQuestion();
+            }, 1000);
+          });
+          answersDiv.appendChild(btn);
         });
-
-        // شغّل مؤقت السؤال
-        startQuestionTimer(PER_QUESTION_SECONDS);
       }
 
-      function nextQuestion() {
-        stopQuestionTimer();
-        localIndex++;
-        renderQuestion();
-      }
-
-      async function finishLocal() {
-        stopQuestionTimer();
-        optionsWrap.innerHTML = "";
-        feedback.innerText = "انتهيت — انتظر النتيجة النهائية";
-        doneBox.classList.remove("hidden");
-
-        // علّم نفسك منتهي
-        if (playerId)
-          await db
-            .ref(`liveQuiz/players/${playerId}`)
-            .update({ finished: true });
-
-        // تحقق إن كان الجميع انتهى → انهي الجولة
-        const snap = await playersRef.once("value");
+      const playersRef = db.ref("liveQuiz/players");
+      playersRef.on("value", (snap) => {
         const data = snap.val() || {};
-        const arr = Object.values(data);
-        const allFinished = arr.length > 0 && arr.every((p) => p.finished);
-        if (allFinished) {
-          await liveRef.update({ status: "ended", endedAt: Date.now() });
-          finalize();
-        }
-      }
+        const arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
+        playersCount.innerText = arr.length;
 
-      /* ========== الترتيب المباشر ========== */
-      function renderLeaders(list) {
-        const arr = list
-          .slice()
-          .sort((a, b) => (b.score || 0) - (a.score || 0));
         leaderList.innerHTML = "";
-        arr.forEach((p, i) => {
-          const li = document.createElement("li");
-          li.className = "leader";
-          if (i === 0) li.classList.add("rank1");
-          if (i === 1) li.classList.add("rank2");
-          if (i === 2) li.classList.add("rank3");
+        arr
+          .sort((a, b) => (b.score || 0) - (a.score || 0))
+          .forEach((p, i) => {
+            const li = document.createElement("li");
+            li.innerText = `${p.name} — ${p.score || 0} نقاط`;
+            if (i === 0) li.classList.add("top");
+            leaderList.appendChild(li);
+          });
 
-          const crown = i === 0 ? "👑" : i + 1;
-          const name = (p.name || "لاعب").toString();
-          const score = p.score || 0;
-          const pct = Math.min(
-            100,
-            Math.round((score / Math.max(1, QUESTIONS.length)) * 100)
-          );
-
-          li.innerHTML = `
-          <div class="crown">${crown}</div>
-          <div>
-            <div>${escapeHtml(name)}</div>
-            <div class="bar"><i style="width:${pct}%"></i></div>
-          </div>
-          <div>${score} نقطة</div>
-        `;
-          leaderList.appendChild(li);
-        });
-        topBadge.innerText = arr.length
-          ? `${arr[0].name} (${arr[0].score || 0})`
-          : "—";
-      }
-
-      function escapeHtml(s) {
-        return (s || "").toString().replace(
-          /[&<>"']/g,
-          (c) =>
-            ({
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#39;",
-            }[c])
-        );
-      }
-
-      /* ========== إنهاء الجولة + احتفال ========== */
-      async function finalize() {
-        // احسب الفائز
-        const snap = await playersRef.once("value");
-        const data = snap.val() || {};
-        const arr = Object.values(data).map((v) => ({
-          name: v.name,
-          score: v.score || 0,
-        }));
-        arr.sort((a, b) => b.score - a.score);
-
-        if (arr.length) {
-          // confetti + نغمة فوز
-          confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
-          sfx.win();
-          alert(`🎉 مبروك! الفائز: ${arr[0].name} — ${arr[0].score} نقطة`);
+        if (arr.length >= 2 && currentIndex === null) {
+          currentIndex = 0;
+          statusLabel.innerText = "الحالة: بدأت";
+          showQuestion();
         }
-
-        // نظّف لاعبي الجولة عشان الجولة الجاية تبدأ من الصفر (حل مشكلة بقايا الأسماء)
-        setTimeout(async () => {
-          await playersRef.remove();
-          await liveRef.update({ status: "waiting" });
-          // ارجَع لشاشة الترحيب
-          welcomeCard.classList.remove("hidden");
-          quizCard.classList.add("hidden");
-          started = false;
-          statusShort.innerText = "في انتظار";
-          statusLabel.innerText = "في انتظار";
-        }, 500);
-      }
+      });
     </script>
   </body>
 </html>
