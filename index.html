@@ -9,9 +9,89 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-      /* ... كل الـ CSS كما هو ... */
+      body {
+        font-family: "Cairo", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f5f5f5;
+      }
+      .app {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 12px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .card {
+        background: #fff;
+        padding: 16px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
       .hidden {
         display: none;
+      }
+      .input {
+        padding: 8px 12px;
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-top: 8px;
+      }
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        background: #007bff;
+        color: #fff;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background: #0056b3;
+      }
+      .meta {
+        font-size: 14px;
+        color: #555;
+        margin-top: 6px;
+      }
+      main {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      section {
+        flex: 2;
+      }
+      aside.aside {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .leaders {
+        padding-left: 16px;
+      }
+      .smallMuted {
+        font-size: 13px;
+        color: #777;
+      }
+      .progress {
+        width: 100%;
+        background: #eee;
+        height: 8px;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .progress i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: #007bff;
+        transition: width 0.3s ease;
       }
     </style>
   </head>
@@ -66,7 +146,8 @@
           </div>
 
           <div id="quizCard" class="card hidden">
-            <!-- محتوى المسابقة كما هو -->
+            <h2 id="questionText"></h2>
+            <div id="optionsContainer" style="margin-top: 12px"></div>
           </div>
         </section>
 
@@ -103,7 +184,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
-      // Firebase config (حط البيانات الحقيقية هنا)
+      // Firebase config
       const firebaseConfig = {
         apiKey: "AIzaSyDOQ1wpof7OhyRRCD_0Of0RY0jggnHmSJ4",
         authDomain: "test-competion.firebaseapp.com",
@@ -122,24 +203,25 @@
         playerName = "",
         localScore = 0,
         localIndex = 0,
-        shuffled = [],
-        quizEndAt = null;
-      let totalSeconds = 300,
-        maxParticipants = 2,
-        status = "waiting";
-
+        currentQ = 0;
+      const totalSeconds = 300,
+        maxParticipants = 2;
       const $ = (sel) => document.querySelector(sel);
-      const welcomeCard = $("#welcomeCard");
-      const joinBtn = $("#joinBtn"),
+      const welcomeCard = $("#welcomeCard"),
+        joinBtn = $("#joinBtn"),
         nameInput = $("#nameInput"),
         playersCount = $("#playersCount");
       const waitingForStart = $("#waitingForStart"),
         waitingText = $("#waitingText"),
         requiredCount = $("#requiredCount"),
         waitingProgress = $("#waitingProgress");
-      const quizCard = $("#quizCard");
+      const quizCard = $("#quizCard"),
+        questionText = $("#questionText"),
+        optionsContainer = $("#optionsContainer");
+      const leaderList = $("#leaderList"),
+        statusLabel = $("#statusLabel"),
+        statusShort = $("#statusShort");
 
-      // Questions
       const QUESTIONS = [
         {
           q: "ما هي عاصمة مصر؟",
@@ -154,7 +236,35 @@
         { q: "كم عدد قارات العالم؟", opts: ["5", "6", "7", "8"], a: 2 },
       ];
 
-      // Join
+      function startQuiz() {
+        welcomeCard.style.display = "none";
+        quizCard.classList.remove("hidden");
+        showQuestion();
+      }
+
+      function showQuestion() {
+        if (currentQ >= QUESTIONS.length) {
+          quizCard.innerHTML = "<h2>انتهت المسابقة! 🏆</h2>";
+          return;
+        }
+        const q = QUESTIONS[currentQ];
+        questionText.innerText = q.q;
+        optionsContainer.innerHTML = "";
+        q.opts.forEach((opt, i) => {
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.style.display = "block";
+          btn.style.marginTop = "6px";
+          btn.innerText = opt;
+          btn.onclick = () => {
+            if (i === q.a) localScore++;
+            currentQ++;
+            showQuestion();
+          };
+          optionsContainer.appendChild(btn);
+        });
+      }
+
       joinBtn.addEventListener("click", async () => {
         const name =
           nameInput.value.trim() ||
@@ -163,21 +273,22 @@
         localStorage.setItem("savedName", playerName);
         const key = db.ref("liveQuiz/players").push().key;
         playerId = key;
-        await db.ref(`liveQuiz/players/${playerId}`).set({
-          name: playerName,
-          score: 0,
-          currentQuestion: 0,
-          finished: false,
-          joinedAt: Date.now(),
-          leftTab: false,
-        });
+        await db
+          .ref(`liveQuiz/players/${playerId}`)
+          .set({
+            name: playerName,
+            score: 0,
+            currentQuestion: 0,
+            finished: false,
+            joinedAt: Date.now(),
+            leftTab: false,
+          });
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
         welcomeCard.style.display = "none";
       });
 
-      // Listen players & auto-start
-      const liveRef = db.ref("liveQuiz");
       const playersRef = db.ref("liveQuiz/players");
+      const liveRef = db.ref("liveQuiz");
 
       playersRef.on("value", async (snap) => {
         const data = snap.val() || {};
@@ -189,19 +300,32 @@
         }));
         playersCount.innerText = arr.length;
 
-        // Waiting progress
-        const settingsSnap = await liveRef.child("settings").once("value");
-        const settings = settingsSnap.val() || {};
-        const need = settings.maxParticipants || maxParticipants;
+        const need = maxParticipants;
         requiredCount.innerText = need;
         const pct = Math.min(100, Math.round((arr.length / need) * 100));
         waitingProgress.style.width = pct + "%";
+
         if (arr.length < need) {
           waitingForStart.classList.remove("hidden");
           waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${need}`;
+          statusLabel.innerText = "في انتظار";
+          statusShort.innerText = "في انتظار";
         } else {
           waitingForStart.classList.add("hidden");
+          startQuiz();
+          statusLabel.innerText = "جارية";
+          statusShort.innerText = "جارية";
         }
+
+        // Update leaderboard
+        leaderList.innerHTML = "";
+        arr
+          .sort((a, b) => b.score - a.score)
+          .forEach((p) => {
+            const li = document.createElement("li");
+            li.innerText = p.name + " (" + p.score + ")";
+            leaderList.appendChild(li);
+          });
       });
     </script>
   </body>
