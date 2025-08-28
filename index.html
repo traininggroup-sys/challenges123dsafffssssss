@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>مسابقة حماسية</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>مسابقة أعضاء جروب المشتركين للتدريب</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap"
       rel="stylesheet"
@@ -13,85 +13,73 @@
       body {
         font-family: "Cairo", sans-serif;
         margin: 0;
-        background: #f2f2f2;
+        padding: 0;
+        background: #f3f3f3;
       }
-      header {
-        background: #4a90e2;
-        color: #fff;
-        padding: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      h1 {
-        margin: 0;
-        font-size: 1.5rem;
+      header,
+      footer {
+        background: #0055aa;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
       }
       main {
         display: flex;
-        padding: 20px;
         gap: 20px;
+        padding: 20px;
+        max-width: 1200px;
+        margin: auto;
+        flex-wrap: wrap;
       }
-      section {
-        flex: 2;
-      }
+      section,
       aside {
         flex: 1;
+        min-width: 280px;
       }
       .card {
-        background: #fff;
+        background: white;
         padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-      }
-      .input {
-        width: 100%;
-        padding: 8px;
-        margin-top: 8px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-      }
-      .btn {
-        padding: 10px 20px;
-        background: #4a90e2;
-        color: #fff;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-      .btn:hover {
-        background: #357abd;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
       }
       .hidden {
         display: none;
       }
-      .answer {
-        padding: 8px;
+      .input {
+        width: 100%;
+        padding: 10px;
         margin-top: 8px;
-        border-radius: 5px;
-        cursor: pointer;
+        border-radius: 8px;
         border: 1px solid #ccc;
+      }
+      .btn {
+        padding: 10px 15px;
+        border: none;
+        background: #0055aa;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background: #004080;
+      }
+      .answer {
+        padding: 10px;
+        margin: 6px 0;
+        background: #eee;
+        border-radius: 8px;
+        cursor: pointer;
         transition: 0.2s;
       }
-      .answer:hover {
-        background: #e0e0e0;
-      }
-      .correct {
+      .answer.correct {
         background: #4caf50;
-        color: #fff;
+        color: white;
       }
-      .wrong {
+      .answer.wrong {
         background: #f44336;
-        color: #fff;
+        color: white;
       }
-      ol {
-        padding-left: 20px;
-      }
-      .leader {
-        padding: 5px 0;
-      }
-      .top {
+      .leaders li.top {
         font-weight: bold;
         color: #ff9800;
       }
@@ -99,24 +87,30 @@
   </head>
   <body>
     <header>
-      <h1>مسابقة حماسية</h1>
-      <div id="statusLabel">في انتظار</div>
+      <h1>مسابقة أعضاء جروب المشتركين للتدريب</h1>
+      <div id="statusLabel">الحالة: في انتظار</div>
     </header>
 
     <main>
       <section>
         <div id="welcomeCard" class="card">
-          <h2>أهلاً بك!</h2>
-          <input id="nameInput" class="input" placeholder="اكتب اسمك" />
-          <button id="joinBtn" class="btn">المشاركة</button>
-          <div style="margin-top: 10px">
-            متصلين الآن: <span id="playersCount">0</span>
+          <h2>أهلاً بكم في المسابقة!</h2>
+          <input
+            id="nameInput"
+            class="input"
+            placeholder="اكتب اسمك (مثال: محمد)"
+          />
+          <div style="margin-top: 12px">
+            <button id="joinBtn" class="btn">المشاركة</button>
           </div>
+          <p style="margin-top: 10px">
+            متصلين الآن: <span id="playersCount">0</span>
+          </p>
         </div>
 
         <div id="quizCard" class="card hidden">
-          <h2 id="questionText">السؤال:</h2>
-          <div id="answers"></div>
+          <h3 id="questionText">السؤال:</h3>
+          <div id="answersDiv"></div>
         </div>
       </section>
 
@@ -128,7 +122,7 @@
       </aside>
     </main>
 
-    <footer class="card" style="text-align: center">© مسابقة حماسية</footer>
+    <footer>© مسابقة أعضاء جروب المشتركين للتدريب</footer>
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -148,17 +142,22 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
 
-      let playerId = null;
-      let playerName = "";
-      const $ = (sel) => document.querySelector(sel);
-      const joinBtn = $("#joinBtn"),
-        nameInput = $("#nameInput");
-      const welcomeCard = $("#welcomeCard"),
-        quizCard = $("#quizCard");
-      const playersCount = $("#playersCount"),
-        leaderList = $("#leaderList");
-      const questionText = $("#questionText"),
-        answersDiv = $("#answers");
+      const audioCorrect = new Audio(
+        "https://www.soundjay.com/buttons/sounds/button-3.mp3"
+      );
+      const audioWrong = new Audio(
+        "https://www.soundjay.com/buttons/sounds/button-10.mp3"
+      );
+
+      const $ = (s) => document.querySelector(s);
+      const welcomeCard = $("#welcomeCard");
+      const joinBtn = $("#joinBtn");
+      const nameInput = $("#nameInput");
+      const playersCount = $("#playersCount");
+      const quizCard = $("#quizCard");
+      const questionText = $("#questionText");
+      const answersDiv = $("#answersDiv");
+      const leaderList = $("#leaderList");
       const statusLabel = $("#statusLabel");
 
       const QUESTIONS = [
@@ -168,12 +167,16 @@
           a: 0,
         },
         {
-          q: "من هو مؤسس مايكروسوفت؟",
+          q: "من هو مؤسس شركة مايكروسوفت؟",
           opts: ["بيل جيتس", "ستيف جوبز", "إيلون ماسك", "مارك زوكربيرج"],
           a: 0,
         },
         { q: "كم عدد قارات العالم؟", opts: ["5", "6", "7", "8"], a: 2 },
       ];
+
+      let playerId = null;
+      let playerName = "";
+      let currentIndex = null;
 
       joinBtn.addEventListener("click", async () => {
         const name =
@@ -182,61 +185,75 @@
         playerName = name;
         const key = db.ref("liveQuiz/players").push().key;
         playerId = key;
-        await db
-          .ref(`liveQuiz/players/${playerId}`)
-          .set({ name: playerName, score: 0, current: 0, finished: false });
+        await db.ref(`liveQuiz/players/${playerId}`).set({
+          name: playerName,
+          score: 0,
+          currentQuestion: 0,
+          finished: false,
+        });
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
         welcomeCard.classList.add("hidden");
-        quizCard.classList.remove("hidden");
-      });
-
-      const liveRef = db.ref("liveQuiz");
-      const playersRef = db.ref("liveQuiz/players");
-
-      playersRef.on("value", (snap) => {
-        const data = snap.val() || {};
-        const arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
-        playersCount.innerText = arr.length;
-
-        // تحديث الترتيب
-        leaderList.innerHTML = "";
-        arr
-          .sort((a, b) => b.score - a.score)
-          .forEach((p, i) => {
-            const li = document.createElement("li");
-            li.innerText = p.name;
-            if (i === 0) li.classList.add("top");
-            leaderList.appendChild(li);
-          });
-
-        if (arr.length >= 2) {
-          // تبدأ المسابقة مع 2 لاعبين
-          statusLabel.innerText = "بدأت";
-          if (!window.currentIndex) window.currentIndex = 0;
-          showQuestion();
-        }
       });
 
       function showQuestion() {
-        const q = QUESTIONS[window.currentIndex];
-        if (!q) return;
+        const q = QUESTIONS[currentIndex];
+        if (!q) {
+          statusLabel.innerText = "الحالة: انتهت";
+          quizCard.classList.add("hidden");
+          return;
+        }
+        quizCard.classList.remove("hidden");
         questionText.innerText = "السؤال: " + q.q;
         answersDiv.innerHTML = "";
         q.opts.forEach((opt, i) => {
           const btn = document.createElement("div");
           btn.classList.add("answer");
           btn.innerText = opt;
-          btn.addEventListener("click", () => {
-            if (i === q.a) btn.classList.add("correct"), confetti();
-            else btn.classList.add("wrong");
+          btn.addEventListener("click", async () => {
+            if (answersDiv.querySelector(".correct,.wrong")) return;
+            if (i === q.a) {
+              btn.classList.add("correct");
+              audioCorrect.play();
+              confetti({ particleCount: 100, spread: 70 });
+              await db
+                .ref(`liveQuiz/players/${playerId}/score`)
+                .transaction((s) => (s || 0) + 1);
+            } else {
+              btn.classList.add("wrong");
+              audioWrong.play();
+            }
             setTimeout(() => {
-              window.currentIndex++;
+              currentIndex++;
               showQuestion();
             }, 800);
           });
           answersDiv.appendChild(btn);
         });
       }
+
+      const playersRef = db.ref("liveQuiz/players");
+      playersRef.on("value", (snap) => {
+        const data = snap.val() || {};
+        const arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
+        playersCount.innerText = arr.length;
+
+        leaderList.innerHTML = "";
+        arr
+          .sort((a, b) => (b.score || 0) - (a.score || 0))
+          .forEach((p, i) => {
+            const li = document.createElement("li");
+            li.innerText = `${p.name} — ${p.score || 0} نقاط`;
+            if (i === 0) li.classList.add("top");
+            leaderList.appendChild(li);
+          });
+
+        // بدء المسابقة عند وجود لاعبين كافيين (2 للاختبار)
+        if (arr.length >= 2 && currentIndex === null) {
+          currentIndex = 0;
+          statusLabel.innerText = "الحالة: بدأت";
+          showQuestion();
+        }
+      });
     </script>
   </body>
 </html>
