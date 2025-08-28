@@ -234,6 +234,38 @@
       .hidden {
         display: none;
       }
+
+      /* الأساس */
+      #question {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+        text-align: center;
+        line-height: 1.6;
+      }
+
+      .option-btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        font-size: 1rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      /* للموبايل */
+      @media (max-width: 600px) {
+        #question {
+          font-size: 1.2rem; /* خط أصغر شوية علشان يدخل */
+          padding: 0 10px;
+        }
+
+        .option-btn {
+          font-size: 0.95rem;
+          padding: 10px;
+        }
+      }
     </style>
   </head>
   <body>
