@@ -265,43 +265,7 @@
       <main>
         <section>
           <!-- بطاقة الترحيب -->
-          <div id="welcomeCard" class="card welcome">
-            <h2>أهلاً بكم في المسابقة!</h2>
-            <p class="meta">
-              اكتب اسمك واضغط مشاركة. تبدأ المسابقة تلقائيًا عند اكتمال عدد 2
-              متسابق للتجربة.
-            </p>
-            <input
-              id="nameInput"
-              class="input"
-              placeholder="اكتب اسمك (مثال: نجلاء)"
-            />
-            <div
-              style="
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-                justify-content: center;
-                margin-top: 8px;
-              "
-            >
-              <button id="joinBtn" class="btn">المشاركة</button>
-            </div>
-            <div class="meta" style="margin-top: 8px">
-              متصلين الآن: <b id="playersCount">0</b>
-            </div>
-
-            <div id="waitingBox" class="card" style="margin-top: 10px">
-              <div class="meta" id="waitingText">
-                في انتظار اكتمال العدد — الآن 0 / 2
-              </div>
-              <div class="progress" style="margin-top: 8px">
-                <i id="waitingProgress"></i>
-              </div>
-            </div>
-          </div>
-
-          <!-- بطاقة المسابقة -->
+          <!-- داخل بطاقة المسابقة -->
           <div id="quizCard" class="card hidden">
             <div class="row">
               <div style="flex: 1">
@@ -339,6 +303,13 @@
                   انتظر زملائك لعرض النتائج النهائية.
                 </div>
               </div>
+            </div>
+
+            <!-- زرار الانسحاب -->
+            <div style="margin-top: 16px; text-align: center">
+              <button id="leaveBtn" class="btn" style="background: #e53935">
+                🚪 انسحاب من المسابقة
+              </button>
             </div>
           </div>
         </section>
