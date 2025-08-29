@@ -988,44 +988,54 @@
 
       /* ========== إنهاء الجولة + احتفال ========== */
       async function finalize() {
-        const snap = await playersRef.once("value");
-        const data = snap.val() || {};
-        const arr = Object.values(data).map((v) => ({
-          name: v.name,
-          score: v.score || 0,
-        }));
-        arr.sort((a, b) => b.score - a.score);
+        try {
+          const snap = await playersRef.once("value");
+          const data = snap.val() || {};
+          const arr = Object.entries(data).map(([id, v]) => ({
+            id,
+            name: v.name || "لاعب",
+            score: v.score || 0,
+          }));
 
-        if (arr.length) {
-          const winnerName = arr[0].name;
-          const winnerScore = arr[0].score;
+          if (!arr.length) return;
 
-          // حدث liveRef بالقيم
+          // ترتيب اللاعبين حسب النقاط
+          arr.sort((a, b) => b.score - a.score);
+
+          const winner = arr[0];
+          const winnerName = winner.name;
+          const winnerScore = winner.score;
+
+          // تحديث liveRef حتى كل اللاعبين يشوفوا الفائز
           await liveRef.update({
             winnerName,
             winnerScore,
             status: "ended",
+            announced: false,
           });
 
           // confetti + نغمة فوز
           confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
           sfx.win();
 
-          // الآن الكل يقرأ القيم الصحيحة
+          // عرض رسالة الفائز
           alert(`🎉 مبروك! الفائز: ${winnerName} — ${winnerScore} نقطة`);
-        }
 
-        // نظّف اللاعبين للجولة التالية
-        setTimeout(async () => {
-          await playersRef.remove();
-          await liveRef.update({ status: "waiting" });
-          welcomeCard.classList.remove("hidden");
-          quizCard.classList.add("hidden");
-          started = false;
-          statusShort.innerText = "في انتظار";
-          statusLabel.innerText = "في انتظار";
-        }, 500);
+          // تنظيف اللاعبين بعد فترة قصيرة وإعادة المسابقة
+          setTimeout(async () => {
+            await playersRef.remove();
+            await liveRef.update({ status: "waiting" });
+            welcomeCard.classList.remove("hidden");
+            quizCard.classList.add("hidden");
+            started = false;
+            statusShort.innerText = "في انتظار";
+            statusLabel.innerText = "في انتظار";
+          }, 5000);
+        } catch (e) {
+          console.error("Error in finalize:", e);
+        }
       }
+
       const winnerPopup = document.getElementById("winnerPopup");
       const winnerOverlay = document.getElementById("winnerOverlay");
       const winnerNameEl = document.getElementById("winnerName");
