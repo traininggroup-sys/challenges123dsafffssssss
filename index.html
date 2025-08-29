@@ -643,6 +643,10 @@
         waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${REQUIRED_PLAYERS}`;
 
         renderLeaders(arr);
+        if (playerId && !started && arr.length >= REQUIRED_PLAYERS) {
+          started = true;
+          startGame();
+        }
 
         if (arr.length === 0) {
           await liveRef.set({ status: "waiting" });
