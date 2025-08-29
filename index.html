@@ -688,15 +688,17 @@
           startGame();
         }
 
-        if (st === "ended") {
-          // كل اللاعبين يعملوا الاحتفال
-          confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
-          sfx.win();
+        // إعلان الفائز عند نهاية المسابقة لكل اللاعبين
+        if (st === "ended" && val.winnerName) {
+          showWinner(val.winnerName, val.winnerScore);
 
-          // تنبيه الفائز مرة واحدة فقط
-          if (!val.announced) {
-            showWinner(val.winnerName, val.winnerScore);
-            liveRef.update({ announced: true });
+          // تشغيل confetti و نغمة فوز مرة واحدة لكل لاعب
+          if (!val.celebrated) {
+            confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
+            sfx.win();
+
+            // علم قاعدة البيانات إنه تم الاحتفال
+            liveRef.update({ celebrated: true }).catch(() => {});
           }
         }
       });
