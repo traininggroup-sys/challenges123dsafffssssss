@@ -813,23 +813,27 @@
 
       /* ========== الترتيب المباشر ========== */
       function renderLeaders(list) {
+        // ترتيب حسب النقاط تنازلي
         const arr = list
           .slice()
           .sort((a, b) => (b.score || 0) - (a.score || 0));
         leaderList.innerHTML = "";
+
         arr.forEach((p, i) => {
           const li = document.createElement("li");
           li.className = "leader";
           if (i === 0) li.classList.add("rank1");
           if (i === 1) li.classList.add("rank2");
           if (i === 2) li.classList.add("rank3");
+
           const crown = i === 0 ? "👑" : i + 1;
-          const name = (p.name || "لاعب").toString();
+          const name = p.name && p.name.trim() !== "" ? p.name : "لاعب"; // تأكد إن الاسم موجود
           const score = p.score || 0;
           const pct = Math.min(
             100,
             Math.round((score / Math.max(1, QUESTIONS.length)) * 100)
           );
+
           li.innerHTML = `
       <div class="crown">${crown}</div>
       <div>
@@ -840,51 +844,53 @@
     `;
           leaderList.appendChild(li);
         });
-        topBadge.innerText = arr.length
-          ? `${arr[0].name || "لاعب"} (${arr[0].score || 0})`
-          : "—";
-      }
-      function escapeHtml(s) {
-        return (s || "")
-          .toString()
-          .replace(
-            /[&<>"']/g,
-            (c) =>
-              ({
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#39;",
-              }[c])
-          );
+
+        // أعلى لاعب
+        if (arr.length) {
+          const topName =
+            arr[0].name && arr[0].name.trim() !== "" ? arr[0].name : "لاعب";
+          topBadge.innerText = `${topName} (${arr[0].score || 0})`;
+        } else {
+          topBadge.innerText = "—";
+        }
       }
 
-      /* ========== إنهاء الجولة + احتفال ========== */
+      /* ========== إنهاء الجولة + إعلان الفائز الحقيقي ========== */
       async function finalize() {
         try {
           const snap = await playersRef.once("value");
           const data = snap.val() || {};
           const arr = Object.entries(data).map(([id, v]) => ({
             id,
-            name: v.name || "لاعب",
+            name: v.name && v.name.trim() !== "" ? v.name : "لاعب", // الاسم الحقيقي أو افتراضي
             score: v.score || 0,
           }));
 
           if (!arr.length) return;
-          arr.sort((a, b) => b.score - a.score);
-          const winner = arr[0];
 
+          // ترتيب اللاعبين حسب النقاط
+          arr.sort((a, b) => b.score - a.score);
+
+          const winner = arr[0];
+          const winnerName = winner.name; // الاسم الحقيقي
+          const winnerScore = winner.score;
+
+          // تحديث liveRef بحيث كل اللاعبين يشوفوا الاسم الحقيقي
           await liveRef.update({
-            winnerName: winner.name || "لاعب",
-            winnerScore: winner.score != null ? winner.score : 0,
+            winnerName,
+            winnerScore,
             status: "ended",
             announced: false,
           });
 
+          // عرض الفائز لكل اللاعبين
+          showWinner(winnerName, winnerScore);
+
+          // confetti + نغمة فوز
           confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
           sfx.win();
 
+          // تنظيف اللاعبين بعد فترة قصيرة وإعادة المسابقة
           setTimeout(async () => {
             await playersRef.remove();
             await liveRef.update({ status: "waiting" });
