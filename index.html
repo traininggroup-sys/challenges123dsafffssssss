@@ -535,6 +535,22 @@
         "
       >
         الجولة الحالية اكتملت! انتظر الجولة القادمة 🔒
+        <br /><br />
+        <button
+          id="closeLobbyMsg"
+          style="
+            padding: 8px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #ffd700;
+            color: #000;
+            font-weight: bold;
+          "
+        >
+          حسناً
+        </button>
       </div>
 
       <footer>© جروب أسئلة الجهاز المركزي</footer>
@@ -701,10 +717,17 @@
         const msg = document.getElementById("fullLobbyMsg");
         msg.style.display = "block";
 
-        // اختفاء الرسالة بعد 3 ثواني
-        setTimeout(() => {
+        // إخفاء الرسالة تلقائياً بعد 5 ثواني
+        const timeoutId = setTimeout(() => {
           msg.style.display = "none";
-        }, 3000);
+        }, 5000);
+
+        // السماح للمستخدم بإغلاق الرسالة يدوياً
+        const closeBtn = document.getElementById("closeLobbyMsg");
+        closeBtn.onclick = () => {
+          clearTimeout(timeoutId);
+          msg.style.display = "none";
+        };
       }
 
       joinBtn.addEventListener("click", async () => {
