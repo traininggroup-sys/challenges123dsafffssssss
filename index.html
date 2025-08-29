@@ -490,7 +490,7 @@
           z-index: 10000;
         "
       >
-        <h2>انتهت المسابقة!</h2>
+        <h2>انتهت المسابقة</h2>
         <p style="margin: 20px 0; font-size: 16px">
           ولو عايز باقي أهم الأسئلة اضغط على هذا الموقع:
           <a href="https://final-site-seven.vercel.app/" target="_blank"
@@ -918,13 +918,13 @@
           );
 
           li.innerHTML = `
-          <div class="crown">${crown}</div>
-          <div>
-            <div>${escapeHtml(name)}</div>
-            <div class="bar"><i style="width:${pct}%"></i></div>
-          </div>
-          <div>${score} نقطة</div>
-        `;
+                <div class="crown">${crown}</div>
+                <div>
+                  <div>${escapeHtml(name)}</div>
+                  <div class="bar"><i style="width:${pct}%"></i></div>
+                </div>
+                <div>${score} نقطة</div>
+              `;
           leaderList.appendChild(li);
         });
         topBadge.innerText = arr.length
@@ -1007,32 +1007,30 @@
       }
 
       function hideWinner() {
+        // نخفي البوكس الفائز
         winnerOverlay.classList.remove("show");
         winnerPopup.classList.remove("show");
-      }
-      function showFinalPage() {
-        winnerPopup.classList.remove("show");
-        winnerOverlay.classList.remove("show");
+
+        // نعرض صفحة النهاية
         finalPage.classList.remove("hidden");
       }
 
-      const finalPage = document.getElementById("finalPage");
-      const backToHomeBtn = document.getElementById("backToHomeBtn");
-
+      // زر الرجوع للشاشة الرئيسية
       backToHomeBtn.addEventListener("click", () => {
+        // نخفي صفحة النهاية
         finalPage.classList.add("hidden");
+
+        // نرجع للواجهة الرئيسية
         welcomeCard.classList.remove("hidden");
         quizCard.classList.add("hidden");
         started = false;
         statusShort.innerText = "في انتظار";
         statusLabel.innerText = "في انتظار";
       });
-      function hideWinner() {
-        winnerOverlay.classList.remove("show");
-        winnerPopup.classList.remove("show");
-        // بدل ما يرجع للصفحة السابقة مباشرة، نعرض الصفحة النهائية
-        showFinalPage();
-      }
+
+      // حدث الضغط على overlay كمان يخلي البوكس الفائز يختفي وتظهر صفحة النهاية
+      winnerOverlay.addEventListener("click", hideWinner);
+      closeWinnerBtn.addEventListener("click", hideWinner);
 
       closeWinnerBtn.addEventListener("click", hideWinner);
       winnerOverlay.addEventListener("click", hideWinner);
