@@ -1017,21 +1017,24 @@
 
       // لما المستخدم يضغط اغلاق أو على overlay
       function hideWinner() {
+        // اخفاء البوكس والـ overlay
         winnerOverlay.classList.remove("show");
         winnerPopup.classList.remove("show");
 
-        // عرض صفحة النهاية بعد إخفاء البوكس
+        // عرض صفحة النهاية بعد تأخير قصير
         setTimeout(() => {
-          finalPage.classList.add("show"); // لاحظ هنا add وليس remove
-        }, 300); // تأخير قصير ليمر transition الانيميشن
+          finalPage.classList.remove("hidden"); // بدل add("show") استخدم remove("hidden")
+          finalPage.classList.add("show"); // أو خليها add("show") لو عايز أنيميشن
+        }, 300);
       }
 
       // زر الرجوع للشاشة الرئيسية
       backToHomeBtn.addEventListener("click", () => {
-        // نخفي صفحة النهاية
+        // اخفاء صفحة النهاية
+        finalPage.classList.remove("show");
         finalPage.classList.add("hidden");
 
-        // نرجع للواجهة الرئيسية
+        // ارجع للواجهة الرئيسية
         welcomeCard.classList.remove("hidden");
         quizCard.classList.add("hidden");
         started = false;
@@ -1039,10 +1042,7 @@
         statusLabel.innerText = "في انتظار";
       });
 
-      // حدث الضغط على overlay كمان يخلي البوكس الفائز يختفي وتظهر صفحة النهاية
-      winnerOverlay.addEventListener("click", hideWinner);
-      closeWinnerBtn.addEventListener("click", hideWinner);
-
+      // ربط الأحداث
       closeWinnerBtn.addEventListener("click", hideWinner);
       winnerOverlay.addEventListener("click", hideWinner);
     </script>
