@@ -279,6 +279,62 @@
         border-top-left-radius: 12px;
         border-top-right-radius: 12px;
       }
+      #winnerPopup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        background: #fff;
+        padding: 28px 36px;
+        border-radius: 16px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        z-index: 9999;
+        transition: transform 0.3s ease;
+      }
+      #winnerPopup.show {
+        transform: translate(-50%, -50%) scale(1);
+      }
+      #winnerPopup h2 {
+        font-size: 24px;
+        margin: 0 0 12px;
+        color: var(--brand);
+      }
+      #winnerPopup p {
+        font-size: 18px;
+        margin: 0;
+        font-weight: 700;
+      }
+      #winnerOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.35);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 9998;
+      }
+      #winnerOverlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #winnerPopup button {
+        margin-top: 18px;
+        padding: 10px 20px;
+        border: none;
+        background: var(--brand);
+        color: #fff;
+        font-weight: 700;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      #winnerPopup button:hover {
+        transform: translateY(-2px);
+      }
     </style>
   </head>
   <body>
@@ -398,6 +454,13 @@
           </div>
         </aside>
       </main>
+      <div id="winnerOverlay"></div>
+      <div id="winnerPopup">
+        <h2>🎉 مبروك!</h2>
+        <p id="winnerName">—</p>
+        <p id="winnerScore">— نقاط</p>
+        <button id="closeWinnerPopup">اغلاق</button>
+      </div>
 
       <footer>© مسابقة أعضاء جروب المشتركين للتدريب</footer>
     </div>
@@ -927,7 +990,6 @@
 
       /* ========== إنهاء الجولة + احتفال ========== */
       async function finalize() {
-        // احسب الفائز
         const snap = await playersRef.once("value");
         const data = snap.val() || {};
         const arr = Object.values(data).map((v) => ({
@@ -937,17 +999,28 @@
         arr.sort((a, b) => b.score - a.score);
 
         if (arr.length) {
+          const winnerName = arr[0].name;
+          const winnerScore = arr[0].score;
+
+          // حدث liveRef بالقيم
+          await liveRef.update({
+            winnerName,
+            winnerScore,
+            status: "ended",
+          });
+
           // confetti + نغمة فوز
           confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
           sfx.win();
-          alert(`🎉 مبروك! الفائز: ${arr[0].name} — ${arr[0].score} نقطة`);
+
+          // الآن الكل يقرأ القيم الصحيحة
+          alert(`🎉 مبروك! الفائز: ${winnerName} — ${winnerScore} نقطة`);
         }
 
-        // نظّف لاعبي الجولة عشان الجولة الجاية تبدأ من الصفر (حل مشكلة بقايا الأسماء)
+        // نظّف اللاعبين للجولة التالية
         setTimeout(async () => {
           await playersRef.remove();
           await liveRef.update({ status: "waiting" });
-          // ارجَع لشاشة الترحيب
           welcomeCard.classList.remove("hidden");
           quizCard.classList.add("hidden");
           started = false;
@@ -955,6 +1028,26 @@
           statusLabel.innerText = "في انتظار";
         }, 500);
       }
+      const winnerPopup = document.getElementById("winnerPopup");
+      const winnerOverlay = document.getElementById("winnerOverlay");
+      const winnerNameEl = document.getElementById("winnerName");
+      const winnerScoreEl = document.getElementById("winnerScore");
+      const closeWinnerBtn = document.getElementById("closeWinnerPopup");
+
+      function showWinner(name, score) {
+        winnerNameEl.innerText = name;
+        winnerScoreEl.innerText = score + " نقطة";
+        winnerOverlay.classList.add("show");
+        winnerPopup.classList.add("show");
+      }
+
+      function hideWinner() {
+        winnerOverlay.classList.remove("show");
+        winnerPopup.classList.remove("show");
+      }
+
+      closeWinnerBtn.addEventListener("click", hideWinner);
+      winnerOverlay.addEventListener("click", hideWinner);
     </script>
   </body>
 </html>
