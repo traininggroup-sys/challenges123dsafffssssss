@@ -951,8 +951,8 @@
       const closeWinnerBtn = document.getElementById("closeWinnerPopup");
 
       function showWinner(name, score) {
-        winnerNameEl.innerText = name || "لاعب"; // لو الاسم undefined يحط "لاعب"
-        winnerScoreEl.innerText = (score != null ? score : 0) + " نقطة"; // لو النقاط undefined يحط 0
+        winnerNameEl.innerText = name;
+        winnerScoreEl.innerText = score + " نقطة";
         winnerOverlay.classList.add("show");
         winnerPopup.classList.add("show");
       }
