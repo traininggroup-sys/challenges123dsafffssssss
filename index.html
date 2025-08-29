@@ -486,7 +486,7 @@
       const liveRef = db.ref("liveQuiz");
       const playersRef = db.ref("liveQuiz/players");
 
-      /* ========== أسئلة مثال ========== */
+      /* ========== أسئلة (مثال) ========== */
       const QUESTIONS = [
         {
           q: "الرفع في الأفعال ينفرد عن الأسماء بـ .............",
@@ -505,7 +505,7 @@
         },
       ];
 
-      const REQUIRED_PLAYERS = 2; // عدد اللاعبين المطلوب
+      const REQUIRED_PLAYERS = 2;
       const PER_QUESTION_SECONDS = 15;
 
       /* ========== عناصر واجهة ========== */
@@ -530,9 +530,7 @@
         doneBox = $("#doneBox");
       const leaderList = $("#leaderList"),
         topBadge = $("#topBadge");
-      const leaveBtn = $("#leaveBtn");
 
-      /* ========== حالة محلية ========== */
       let playerId = null,
         playerName = "",
         localScore = 0,
@@ -541,10 +539,10 @@
         questionDeadline = null,
         started = false;
 
-      /* ========== أصوات WebAudio ========== */
+      /* ========== WebAudio ========== */
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      let ctx = new AudioCtx(),
-        audioUnlocked = false;
+      let ctx = new AudioCtx();
+      let audioUnlocked = false;
       function unlockAudio() {
         if (audioUnlocked) return;
         ctx
@@ -553,6 +551,23 @@
           .catch(() => {});
       }
       document.addEventListener("click", unlockAudio, { once: true });
+
+      const leaveBtn = document.getElementById("leaveBtn");
+      if (leaveBtn) {
+        leaveBtn.addEventListener("click", async () => {
+          if (playerId) {
+            await db.ref(`liveQuiz/players/${playerId}`).remove();
+            playerId = null;
+            playerName = "";
+            quizCard.classList.add("hidden");
+            welcomeCard.classList.remove("hidden");
+            stopAllSounds();
+          }
+        });
+      }
+      window.addEventListener("beforeunload", () => {
+        if (playerId) db.ref(`liveQuiz/players/${playerId}`).remove();
+      });
 
       function beep({ freq = 600, type = "sine", ms = 200, gain = 0.06 } = {}) {
         try {
@@ -567,7 +582,6 @@
           setTimeout(() => osc.stop(), ms);
         } catch (e) {}
       }
-
       const sfx = {
         start: () => beep({ freq: 900, type: "triangle", ms: 200 }),
         correct: () => {
@@ -586,27 +600,9 @@
         try {
           if (ctx && ctx.state !== "closed") ctx.suspend();
         } catch (e) {
-          console.error(e);
+          console.error("Error stopping sounds:", e);
         }
       }
-
-      /* ========== زر الانسحاب ========== */
-      if (leaveBtn) {
-        leaveBtn.addEventListener("click", async () => {
-          if (playerId) {
-            await db.ref(`liveQuiz/players/${playerId}`).remove();
-            playerId = null;
-            playerName = "";
-            quizCard.classList.add("hidden");
-            welcomeCard.classList.remove("hidden");
-            stopAllSounds();
-          }
-        });
-      }
-
-      window.addEventListener("beforeunload", () => {
-        if (playerId) db.ref(`liveQuiz/players/${playerId}`).remove();
-      });
 
       /* ========== انضمام ========== */
       joinBtn.addEventListener("click", async () => {
@@ -633,7 +629,7 @@
         }
       });
 
-      /* ========== متابعة اللاعبين + بدء تلقائي ========== */
+      /* ========== ترتيب مباشر + بدء تلقائي ========== */
       playersRef.on("value", async (snap) => {
         const data = snap.val() || {};
         const arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
@@ -645,6 +641,7 @@
         );
         waitingProgress.style.width = pct + "%";
         waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${REQUIRED_PLAYERS}`;
+
         renderLeaders(arr);
 
         if (arr.length === 0) {
@@ -658,7 +655,7 @@
         }
       });
 
-      /* ========== متابعة حالة المسابقة ========== */
+      /* ========== متابعة حالة الـ Live ========== */
       liveRef.on("value", (snap) => {
         const val = snap.val() || {};
         const st = val.status || "waiting";
@@ -672,15 +669,20 @@
           startGame();
         }
 
-        if (st === "ended" && !val.announced) {
+        if (st === "ended") {
           confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
           sfx.win();
-          showWinner(val.winnerName, val.winnerScore);
-          liveRef.update({ announced: true });
+          if (!val.announced) {
+            showWinner(
+              val.winnerName || "لاعب",
+              val.winnerScore != null ? val.winnerScore : 0
+            );
+            liveRef.update({ announced: true });
+          }
         }
       });
 
-      /* ========== بدء اللعبة ========== */
+      /* ========== بدء الجولة ========== */
       function startGame() {
         localScore = 0;
         localIndex = 0;
@@ -690,10 +692,12 @@
         renderQuestion();
       }
 
-      /* ========== مؤقت السؤال ========== */
+      /* ========== المؤقت لكل سؤال ========== */
       function startQuestionTimer(totalSec = PER_QUESTION_SECONDS) {
         stopQuestionTimer();
-        questionDeadline = Date.now() + totalSec * 1000;
+        const endAt = Date.now() + totalSec * 1000;
+        questionDeadline = endAt;
+
         questionTimer = setInterval(() => {
           const remain = Math.max(
             0,
@@ -711,7 +715,6 @@
             pct * 3.6
           }deg, #eee ${pct * 3.6}deg)`;
           circleTimer.innerText = remain;
-
           if (remain <= 5 && remain > 0) sfx.tick();
           if (remain <= 0) {
             stopQuestionTimer();
@@ -726,12 +729,11 @@
         }
       }
 
-      /* ========== عرض سؤال ========== */
+      /* ========== عرض سؤال/إجابات ========== */
       let optionLock = false;
       function renderQuestion() {
         feedback.innerText = "";
         doneBox.classList.add("hidden");
-
         if (localIndex >= QUESTIONS.length) {
           finishLocal();
           return;
@@ -755,94 +757,168 @@
           div.onclick = async () => {
             if (optionLock) return;
             optionLock = true;
+
             if (i === q.a) {
               div.classList.add("correct");
-              feedback.innerText = "صح!";
+              feedback.innerText = "إجابة صحيحة ✅";
               sfx.correct();
-              localScore++;
+              await db
+                .ref(`liveQuiz/players/${playerId}/score`)
+                .transaction((s) => (s || 0) + 1);
             } else {
               div.classList.add("wrong");
-              feedback.innerText = `خطأ! الإجابة الصحيحة: ${q.opts[q.a]}`;
+              feedback.innerText = `خطأ ❌ الإجابة الصحيحة: ${q.opts[q.a]}`;
               sfx.wrong();
+              Array.from(optionsWrap.children).forEach((c) => {
+                if (c.innerText === q.opts[q.a]) c.classList.add("correct");
+              });
             }
-            await playersRef
-              .child(playerId)
-              .update({ score: localScore, currentQuestion: localIndex + 1 });
-            setTimeout(nextQuestion, 1000);
+
+            await db
+              .ref(`liveQuiz/players/${playerId}`)
+              .update({ currentQuestion: localIndex + 1 });
+            setTimeout(() => nextQuestion(), 900);
           };
           optionsWrap.appendChild(div);
         });
-        startQuestionTimer();
-      }
 
-      /* ========== الانتقال للسؤال التالي ========== */
+        startQuestionTimer(PER_QUESTION_SECONDS);
+      }
       function nextQuestion() {
+        stopQuestionTimer();
         localIndex++;
         renderQuestion();
       }
 
-      /* ========== الانتهاء المحلي ========== */
       async function finishLocal() {
         stopQuestionTimer();
+        optionsWrap.innerHTML = "";
+        feedback.innerText = "انتهيت — انتظر النتيجة النهائية";
         doneBox.classList.remove("hidden");
-        await playersRef
-          .child(playerId)
-          .update({ finished: true, score: localScore });
-        finalize();
+
+        if (playerId)
+          await db
+            .ref(`liveQuiz/players/${playerId}`)
+            .update({ finished: true });
+
+        const snap = await playersRef.once("value");
+        const data = snap.val() || {};
+        const arr = Object.values(data);
+        const allFinished = arr.length > 0 && arr.every((p) => p.finished);
+        if (allFinished) {
+          await liveRef.update({ status: "ended", endedAt: Date.now() });
+          finalize();
+        }
       }
 
-      /* ========== إنهاء المسابقة / الإعلان عن الفائز ========== */
+      /* ========== الترتيب المباشر ========== */
+      function renderLeaders(list) {
+        const arr = list
+          .slice()
+          .sort((a, b) => (b.score || 0) - (a.score || 0));
+        leaderList.innerHTML = "";
+        arr.forEach((p, i) => {
+          const li = document.createElement("li");
+          li.className = "leader";
+          if (i === 0) li.classList.add("rank1");
+          if (i === 1) li.classList.add("rank2");
+          if (i === 2) li.classList.add("rank3");
+          const crown = i === 0 ? "👑" : i + 1;
+          const name = (p.name || "لاعب").toString();
+          const score = p.score || 0;
+          const pct = Math.min(
+            100,
+            Math.round((score / Math.max(1, QUESTIONS.length)) * 100)
+          );
+          li.innerHTML = `
+      <div class="crown">${crown}</div>
+      <div>
+        <div>${escapeHtml(name)}</div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+      </div>
+      <div>${score} نقطة</div>
+    `;
+          leaderList.appendChild(li);
+        });
+        topBadge.innerText = arr.length
+          ? `${arr[0].name || "لاعب"} (${arr[0].score || 0})`
+          : "—";
+      }
+      function escapeHtml(s) {
+        return (s || "")
+          .toString()
+          .replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              }[c])
+          );
+      }
+
+      /* ========== إنهاء الجولة + احتفال ========== */
       async function finalize() {
         try {
           const snap = await playersRef.once("value");
           const data = snap.val() || {};
-          const arr = Object.entries(data)
-            .filter(([id, v]) => v && v.name)
-            .map(([id, v]) => ({ id, name: v.name, score: v.score || 0 }));
+          const arr = Object.entries(data).map(([id, v]) => ({
+            id,
+            name: v.name || "لاعب",
+            score: v.score || 0,
+          }));
 
           if (!arr.length) return;
           arr.sort((a, b) => b.score - a.score);
           const winner = arr[0];
 
-          const live = (await liveRef.once("value")).val() || {};
-          if (live.announced) return;
-
           await liveRef.update({
-            winnerName: winner.name,
-            winnerScore: winner.score,
+            winnerName: winner.name || "لاعب",
+            winnerScore: winner.score != null ? winner.score : 0,
             status: "ended",
             announced: false,
           });
+
+          confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
+          sfx.win();
+
+          setTimeout(async () => {
+            await playersRef.remove();
+            await liveRef.update({ status: "waiting" });
+            welcomeCard.classList.remove("hidden");
+            quizCard.classList.add("hidden");
+            started = false;
+            statusShort.innerText = "في انتظار";
+            statusLabel.innerText = "في انتظار";
+          }, 5000);
         } catch (e) {
-          console.error(e);
+          console.error("Error in finalize:", e);
         }
       }
 
-      /* ========== عرض الفائز ========== */
+      /* ========== popup الفائز ========== */
+      const winnerPopup = document.getElementById("winnerPopup");
+      const winnerOverlay = document.getElementById("winnerOverlay");
+      const winnerNameEl = document.getElementById("winnerName");
+      const winnerScoreEl = document.getElementById("winnerScore");
+      const closeWinnerBtn = document.getElementById("closeWinnerPopup");
+
       function showWinner(name, score) {
-        doneBox.innerHTML = `<h2>الفائز: ${name}</h2><p>النقاط: ${score}</p>`;
+        winnerNameEl.innerText = name || "لاعب";
+        winnerScoreEl.innerText = (score != null ? score : 0) + " نقطة";
+        winnerOverlay.classList.add("show");
+        winnerPopup.classList.add("show");
+      }
+      function hideWinner() {
+        winnerOverlay.classList.remove("show");
+        winnerPopup.classList.remove("show");
       }
 
-      /* ========== عرض قائمة المتصدرين ========== */
-      function renderLeaders(arr) {
-        arr.sort((a, b) => b.score - a.score);
-        leaderList.innerHTML = arr
-          .map(
-            (p, i) =>
-              `<div>${i === 0 ? "<b>🏆</b>" : ""} ${p.name} — ${p.score}</div>`
-          )
-          .join("");
-        if (arr.length > 0) topBadge.innerText = arr[0].name;
-      }
-
-      /* ========== Confetti ========== */
-      function confetti({
-        particleCount = 200,
-        spread = 60,
-        origin = { x: 0.5, y: 0.5 },
-      } = {}) {
-        if (window.confetti) window.confetti({ particleCount, spread, origin });
-      }
+      closeWinnerBtn.addEventListener("click", hideWinner);
+      winnerOverlay.addEventListener("click", hideWinner);
     </script>
   </body>
 </html>
