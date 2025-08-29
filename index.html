@@ -1015,13 +1015,15 @@
         winnerPopup.classList.add("show");
       }
 
+      // لما المستخدم يضغط اغلاق أو على overlay
       function hideWinner() {
         winnerOverlay.classList.remove("show");
         winnerPopup.classList.remove("show");
 
-        // نعرض صفحة النهاية
-        finalPage.classList.remove("hidden");
-        finalPage.classList.add("show"); // <-- مهم!
+        // عرض صفحة النهاية بعد إخفاء البوكس
+        setTimeout(() => {
+          finalPage.classList.add("show"); // لاحظ هنا add وليس remove
+        }, 300); // تأخير قصير ليمر transition الانيميشن
       }
 
       // زر الرجوع للشاشة الرئيسية
