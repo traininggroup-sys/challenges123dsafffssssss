@@ -862,33 +862,29 @@
           const data = snap.val() || {};
           const arr = Object.entries(data).map(([id, v]) => ({
             id,
-            name: v.name && v.name.trim() !== "" ? v.name : "لاعب",
+            name: v.name && v.name.trim() !== "" ? v.name : "لاعب", // الاسم الحقيقي أو افتراضي
             score: v.score || 0,
           }));
 
           if (!arr.length) return;
 
-          // ترتيب اللاعبين حسب النقاط تنازلي
+          // ترتيب اللاعبين حسب النقاط
           arr.sort((a, b) => b.score - a.score);
 
-          const highestScore = arr[0].score;
+          const winner = arr[0];
+          const winnerName = winner.name; // الاسم الحقيقي
+          const winnerScore = winner.score;
 
-          // كل اللاعبين اللي عندهم نفس أعلى نقاط
-          const winners = arr.filter((p) => p.score === highestScore);
-
-          // اسماء الفائزين: لو أكتر من واحد، نعرضهم كلهم
-          const winnerNames = winners.map((p) => p.name).join(" و ");
-
-          // تحديث liveRef بحيث كل اللاعبين يشوفوا الفائزين
+          // تحديث liveRef بحيث كل اللاعبين يشوفوا الاسم الحقيقي
           await liveRef.update({
-            winnerName: winnerNames,
-            winnerScore: highestScore,
+            winnerName,
+            winnerScore,
             status: "ended",
             announced: false,
           });
 
-          // عرض الفائزين لكل اللاعبين
-          showWinner(winnerNames, highestScore);
+          // عرض الفائز لكل اللاعبين
+          showWinner(winnerName, winnerScore);
 
           // confetti + نغمة فوز
           confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
