@@ -515,6 +515,27 @@
         <p id="winnerScore">— نقاط</p>
         <button id="closeWinnerPopup">اغلاق</button>
       </div>
+      <!-- ضع هذا في الـ body -->
+      <div
+        id="fullLobbyMsg"
+        style="
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.85);
+          color: #fff;
+          padding: 25px 40px;
+          border-radius: 12px;
+          font-size: 22px;
+          text-align: center;
+          z-index: 9999;
+          display: none;
+          box-shadow: 0 0 15px #000;
+        "
+      >
+        الجولة الحالية اكتملت! انتظر الجولة القادمة 🔒
+      </div>
 
       <footer>© جروب أسئلة الجهاز المركزي</footer>
     </div>
@@ -673,7 +694,18 @@
       }
 
       /* ========== انضمام ========== */
-      const MAX_PLAYERS = 2; // الحد الأقصى للمتسابقين
+
+      const MAX_PLAYERS = 15; // الحد الأقصى للمتسابقين
+
+      function showFullLobbyMessage() {
+        const msg = document.getElementById("fullLobbyMsg");
+        msg.style.display = "block";
+
+        // اختفاء الرسالة بعد 3 ثواني
+        setTimeout(() => {
+          msg.style.display = "none";
+        }, 3000);
+      }
 
       joinBtn.addEventListener("click", async () => {
         unlockAudio();
@@ -684,7 +716,7 @@
         const numPlayers = Object.keys(currentPlayers).length;
 
         if (numPlayers >= MAX_PLAYERS) {
-          alert("الجولة الحالية اكتملت! انتظر الجولة القادمة 🔒");
+          showFullLobbyMessage(); // عرض الرسالة بدل alert
           return;
         }
 
