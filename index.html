@@ -784,9 +784,7 @@
 
           // تنبيه الفائز مرة واحدة فقط
           if (!val.announced) {
-            alert(
-              `🎉 مبروك! الفائز: ${val.winnerName} — ${val.winnerScore} نقطة`
-            );
+            showWinner(val.winnerName, val.winnerScore);
             liveRef.update({ announced: true });
           }
         }
