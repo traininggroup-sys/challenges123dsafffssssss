@@ -633,13 +633,13 @@
       };
       function stopAllSounds() {
         try {
+          // لو في أي Audio بيتشغل، وقفه
           if (ctx && ctx.state !== "closed") {
-            ctx.close().then(() => {
-              ctx = new AudioCtx();
-              audioUnlocked = false;
-            });
+            ctx.suspend(); // يوقف كل الأصوات بدون ما يقفل الـ context
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error("Error stopping sounds:", e);
+        }
       }
 
       /* ========== انضمام ========== */
@@ -685,18 +685,16 @@
         // ترتيب مباشر
         renderLeaders(arr);
 
-        // لو مفيش لاعبين نهائيًا → نعمل reset للحالة لِـ waiting
+        // لو مفيش لاعبين → reset للحالة
         if (arr.length === 0) {
           await liveRef.set({ status: "waiting" });
           return;
         }
 
-        // ابدأ المسابقة آليًا لما نوصل العدد المطلوب (لو مش بدأت)
-        if (arr.length >= REQUIRED_PLAYERS) {
-          const live = (await liveRef.once("value")).val() || {};
-          if (live.status !== "started") {
-            await liveRef.update({ status: "started", startedAt: Date.now() });
-          }
+        // ابدأ المسابقة لما نوصل العدد المطلوب (لو مش بدأت)
+        const live = (await liveRef.once("value")).val() || {};
+        if (arr.length >= REQUIRED_PLAYERS && live.status === "waiting") {
+          await liveRef.update({ status: "started", startedAt: Date.now() });
         }
       });
 
