@@ -673,14 +673,28 @@
       }
 
       /* ========== انضمام ========== */
+      const MAX_PLAYERS = 15; // الحد الأقصى للمتسابقين
+
       joinBtn.addEventListener("click", async () => {
         unlockAudio();
+
+        // جلب عدد المتسابقين الحاليين
+        const snap = await playersRef.once("value");
+        const currentPlayers = snap.val() || {};
+        const numPlayers = Object.keys(currentPlayers).length;
+
+        if (numPlayers >= MAX_PLAYERS) {
+          alert("الجولة الحالية اكتملت! انتظر الجولة القادمة 🔒");
+          return;
+        }
+
         const name =
           (nameInput.value || "").trim() ||
           "لاعب_" + Math.floor(Math.random() * 900 + 100);
         playerName = name;
         const key = playersRef.push().key;
         playerId = key;
+
         await db.ref(`liveQuiz/players/${playerId}`).set({
           name: playerName,
           score: 0,
@@ -688,11 +702,12 @@
           finished: false,
           joinedAt: Date.now(),
         });
+
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
         welcomeCard.classList.add("hidden");
+
         const live = (await liveRef.once("value")).val() || {};
         if (live.status === "started") {
-          // انظري: هذا يبدأ اللعبة محليًا بعد الانضمام
           started = true;
           startGame();
         }
