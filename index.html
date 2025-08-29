@@ -813,21 +813,36 @@
 
       /* ========== الترتيب المباشر ========== */
       function renderLeaders(list) {
-        // ترتيب حسب النقاط تنازلي
+        // ترتيب اللاعبين حسب النقاط تنازلي
         const arr = list
           .slice()
           .sort((a, b) => (b.score || 0) - (a.score || 0));
         leaderList.innerHTML = "";
 
+        let lastScore = null;
+        let rank = 0;
+        let sameRankCount = 0;
+
         arr.forEach((p, i) => {
           const li = document.createElement("li");
           li.className = "leader";
-          if (i === 0) li.classList.add("rank1");
-          if (i === 1) li.classList.add("rank2");
-          if (i === 2) li.classList.add("rank3");
 
-          const crown = i === 0 ? "👑" : i + 1;
-          const name = p.name && p.name.trim() !== "" ? p.name : "لاعب"; // تأكد إن الاسم موجود
+          // ترتيب مع الأخذ في الاعتبار التعادل
+          if (p.score !== lastScore) {
+            rank = rank + 1 + sameRankCount;
+            sameRankCount = 0;
+          } else {
+            sameRankCount++;
+          }
+          lastScore = p.score;
+
+          // إضافة لون أو تاج للثلاثة الأوائل
+          if (rank === 1) li.classList.add("rank1");
+          if (rank === 2) li.classList.add("rank2");
+          if (rank === 3) li.classList.add("rank3");
+
+          const crown = rank === 1 ? "👑" : rank;
+          const name = (p.name || "لاعب").toString();
           const score = p.score || 0;
           const pct = Math.min(
             100,
@@ -845,14 +860,12 @@
           leaderList.appendChild(li);
         });
 
-        // أعلى لاعب
-        if (arr.length) {
-          const topName =
-            arr[0].name && arr[0].name.trim() !== "" ? arr[0].name : "لاعب";
-          topBadge.innerText = `${topName} (${arr[0].score || 0})`;
-        } else {
-          topBadge.innerText = "—";
-        }
+        // أعلى نقاط للفائزين
+        const highestScore = arr.length ? arr[0].score : 0;
+        const winners = arr.filter((p) => p.score === highestScore);
+        topBadge.innerText =
+          winners.map((p) => p.name || "لاعب").join(" و ") +
+          ` (${highestScore})`;
       }
 
       /* ========== إنهاء الجولة + إعلان الفائز الحقيقي ========== */
@@ -862,29 +875,33 @@
           const data = snap.val() || {};
           const arr = Object.entries(data).map(([id, v]) => ({
             id,
-            name: v.name && v.name.trim() !== "" ? v.name : "لاعب", // الاسم الحقيقي أو افتراضي
+            name: v.name && v.name.trim() !== "" ? v.name : "لاعب",
             score: v.score || 0,
           }));
 
           if (!arr.length) return;
 
-          // ترتيب اللاعبين حسب النقاط
+          // ترتيب اللاعبين حسب النقاط تنازلي
           arr.sort((a, b) => b.score - a.score);
 
-          const winner = arr[0];
-          const winnerName = winner.name; // الاسم الحقيقي
-          const winnerScore = winner.score;
+          const highestScore = arr[0].score;
 
-          // تحديث liveRef بحيث كل اللاعبين يشوفوا الاسم الحقيقي
+          // كل اللاعبين اللي عندهم نفس أعلى نقاط
+          const winners = arr.filter((p) => p.score === highestScore);
+
+          // اسماء الفائزين: لو أكتر من واحد، نعرضهم كلهم
+          const winnerNames = winners.map((p) => p.name).join(" و ");
+
+          // تحديث liveRef بحيث كل اللاعبين يشوفوا الفائزين
           await liveRef.update({
-            winnerName,
-            winnerScore,
+            winnerName: winnerNames,
+            winnerScore: highestScore,
             status: "ended",
             announced: false,
           });
 
-          // عرض الفائز لكل اللاعبين
-          showWinner(winnerName, winnerScore);
+          // عرض الفائزين لكل اللاعبين
+          showWinner(winnerNames, highestScore);
 
           // confetti + نغمة فوز
           confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
