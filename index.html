@@ -208,6 +208,16 @@
         color: var(--brand);
         background: conic-gradient(var(--brand) 0deg, #eee 0deg);
       }
+      @media (max-width: 600px) {
+        .circle {
+          width: 60px;
+          height: 60px;
+          font-size: 14px;
+        }
+        .options {
+          gap: 6px;
+        }
+      }
 
       .leaders {
         list-style: none;
@@ -259,6 +269,15 @@
       }
       .hidden {
         display: none;
+      }
+      footer {
+        text-align: center;
+        padding: 14px;
+        font-size: 13px;
+        color: #fff;
+        background: linear-gradient(90deg, var(--brand), var(--brand2));
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
       }
     </style>
   </head>
@@ -342,14 +361,6 @@
               style="margin-top: 8px; min-height: 20px"
             ></div>
 
-            <div id="doneBox" class="card hidden" style="margin-top: 12px">
-              <div class="center">
-                <strong>✅ انتهيت من إجاباتك.</strong>
-                <div class="meta" style="margin-top: 6px">
-                  انتظر زملائك لعرض النتائج النهائية.
-                </div>
-              </div>
-            </div>
             <div id="doneBox" class="card hidden" style="margin-top: 12px">
               <div class="center">
                 <strong>✅ انتهيت من إجاباتك.</strong>
@@ -621,11 +632,14 @@
         },
       };
       function stopAllSounds() {
-        if (ctx && ctx.state !== "closed") {
-          ctx.close();
-        }
-        ctx = new AudioCtx(); // نعيد تهيئة السياق بعد الإغلاق
-        audioUnlocked = false; // نرجع كأنه لسه ما اتفعلش
+        try {
+          if (ctx && ctx.state !== "closed") {
+            ctx.close().then(() => {
+              ctx = new AudioCtx();
+              audioUnlocked = false;
+            });
+          }
+        } catch (e) {}
       }
 
       /* ========== انضمام ========== */
@@ -690,18 +704,22 @@
       liveRef.on("value", (snap) => {
         const val = snap.val() || {};
         const st = val.status || "waiting";
+
         statusShort.innerText =
           st === "started" ? "بدأت" : st === "ended" ? "انتهت" : "في انتظار";
         statusLabel.innerText = statusShort.innerText;
 
-        // ابدأ اللعبة محليًا فقط لو هذا العميل مسجّل (playerId) ولم يبدأ بعد
-        if (st === "started" && !started) {
-          if (playerId) {
-            started = true;
-            startGame();
-          } else {
-            // إذا المسابقة بدأت لكن هذا الزائر لم ينضم بعد، لا نفعل شيء
-            // (يستطيع الانضمام لاحقًا؛ انظري التعديل أسفل عند الـ joinBtn)
+        if (st === "ended") {
+          // كل اللاعبين يعملوا الاحتفال
+          confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
+          sfx.win();
+
+          // تنبيه الفائز مرة واحدة فقط
+          if (!val.announced) {
+            alert(
+              `🎉 مبروك! الفائز: ${val.winnerName} — ${val.winnerScore} نقطة`
+            );
+            liveRef.update({ announced: true });
           }
         }
       });
