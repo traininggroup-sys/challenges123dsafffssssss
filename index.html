@@ -884,9 +884,16 @@
           msg.style.display = "none";
         };
       }
+      let QUIZ_OPEN = false; // لو true المسابقة مفتوحة، لو false مقفولة
 
       joinBtn.addEventListener("click", async () => {
         unlockAudio();
+
+        // التحقق هل المسابقة مفتوحة ولا مقفولة
+        if (!QUIZ_OPEN) {
+          alert("❌ المسابقة مقفولة حاليًا");
+          return;
+        }
 
         // جلب عدد المتسابقين الحاليين
         const snap = await playersRef.once("value");
@@ -898,9 +905,13 @@
           return;
         }
 
-        const name =
-          (nameInput.value || "").trim() ||
-          "لاعب_" + Math.floor(Math.random() * 900 + 100);
+        // ✅ التحقق من الاسم إجباري
+        const name = (nameInput.value || "").trim();
+        if (!name) {
+          alert("⚠️ من فضلك أدخل اسمك أولاً");
+          return;
+        }
+
         playerName = name;
         const key = playersRef.push().key;
         playerId = key;
@@ -1266,6 +1277,24 @@
       // ربط الأحداث
       closeWinnerBtn.addEventListener("click", hideWinner);
       winnerOverlay.addEventListener("click", hideWinner);
+      let contestTimer;
+
+      function startContest() {
+        // بداية المسابقة
+        console.log("المسابقة بدأت!");
+
+        // نشغل العداد الكلي (مثلاً 15 دقيقة = 900,000 ملي ثانية)
+        contestTimer = setTimeout(() => {
+          endContest();
+        }, 15 * 60 * 1000);
+      }
+
+      function endContest() {
+        console.log("انتهى وقت المسابقة!");
+        // هنا تكتب الكود اللي يقفل المسابقة
+        // مثلا: منع ارسال اجابات جديدة + اعلان النتيجة
+        clearTimeout(contestTimer);
+      }
     </script>
   </body>
 </html>
