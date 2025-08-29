@@ -461,6 +461,13 @@
         <p id="winnerScore">— نقاط</p>
         <button id="closeWinnerPopup">اغلاق</button>
       </div>
+      <button
+        id="newGameBtn"
+        class="btn hidden"
+        style="margin: 10px auto; display: block"
+      >
+        ابدأ مسابقة جديدة
+      </button>
 
       <footer>© مسابقة أعضاء جروب المشتركين للتدريب</footer>
     </div>
@@ -933,6 +940,78 @@
 
       closeWinnerBtn.addEventListener("click", hideWinner);
       winnerOverlay.addEventListener("click", hideWinner);
+      const newGameBtn = document.getElementById("newGameBtn");
+
+      // دالة لإعادة ضبط اللعبة
+      function resetGame() {
+        // إخفاء popup الفائز و confetti
+        hideWinner();
+
+        // إعادة كل المتغيرات المحلية
+        started = false;
+        playerId = null;
+        playerName = "";
+        localScore = 0;
+        localIndex = 0;
+
+        // إعادة حالة Firebase
+        liveRef.set({
+          status: "waiting",
+          winnerName: "",
+          winnerScore: 0,
+          announced: false,
+        });
+
+        // إعادة واجهة الترحيب
+        welcomeCard.classList.remove("hidden");
+        quizCard.classList.add("hidden");
+        waitingProgress.style.width = "0%";
+        waitingText.innerText = `في انتظار اكتمال العدد — الآن 0 / ${REQUIRED_PLAYERS}`;
+        leaderList.innerHTML = "";
+        topBadge.innerText = "";
+
+        // إخفاء زر "ابدأ مسابقة جديدة"
+        newGameBtn.classList.add("hidden");
+      }
+
+      // عند الضغط على زر "ابدأ مسابقة جديدة"
+      newGameBtn.addEventListener("click", resetGame);
+
+      // عدّلي finalize لتظهر الزر بعد انتهاء المسابقة
+      async function finalize() {
+        try {
+          const snap = await playersRef.once("value");
+          const data = snap.val() || {};
+          const arr = Object.entries(data).map(([id, v]) => ({
+            id,
+            name: v.name && v.name.trim() !== "" ? v.name : "لاعب",
+            score: v.score || 0,
+          }));
+
+          if (!arr.length) return;
+
+          arr.sort((a, b) => b.score - a.score);
+          const highestScore = arr[0].score;
+          const winners = arr.filter((p) => p.score === highestScore);
+          const winnerNames = winners.map((p) => p.name).join(" و ");
+
+          await liveRef.update({
+            winnerName: winnerNames,
+            winnerScore: highestScore,
+            status: "ended",
+            announced: false,
+          });
+
+          showWinner(winnerNames, highestScore);
+          confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
+          sfx.win();
+
+          // إظهار زر "ابدأ مسابقة جديدة" بعد انتهاء العد
+          newGameBtn.classList.remove("hidden");
+        } catch (e) {
+          console.error("Error in finalize:", e);
+        }
+      }
     </script>
   </body>
 </html>
