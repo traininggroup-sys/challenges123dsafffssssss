@@ -643,10 +643,6 @@
         waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${REQUIRED_PLAYERS}`;
 
         renderLeaders(arr);
-        if (playerId && !started && arr.length >= REQUIRED_PLAYERS) {
-          started = true;
-          startGame();
-        }
 
         if (arr.length === 0) {
           await liveRef.set({ status: "waiting" });
@@ -817,36 +813,21 @@
 
       /* ========== الترتيب المباشر ========== */
       function renderLeaders(list) {
-        // ترتيب اللاعبين حسب النقاط تنازلي
+        // ترتيب حسب النقاط تنازلي
         const arr = list
           .slice()
           .sort((a, b) => (b.score || 0) - (a.score || 0));
         leaderList.innerHTML = "";
 
-        let lastScore = null;
-        let rank = 0;
-        let sameRankCount = 0;
-
         arr.forEach((p, i) => {
           const li = document.createElement("li");
           li.className = "leader";
+          if (i === 0) li.classList.add("rank1");
+          if (i === 1) li.classList.add("rank2");
+          if (i === 2) li.classList.add("rank3");
 
-          // ترتيب مع الأخذ في الاعتبار التعادل
-          if (p.score !== lastScore) {
-            rank = rank + 1 + sameRankCount;
-            sameRankCount = 0;
-          } else {
-            sameRankCount++;
-          }
-          lastScore = p.score;
-
-          // إضافة لون أو تاج للثلاثة الأوائل
-          if (rank === 1) li.classList.add("rank1");
-          if (rank === 2) li.classList.add("rank2");
-          if (rank === 3) li.classList.add("rank3");
-
-          const crown = rank === 1 ? "👑" : rank;
-          const name = (p.name || "لاعب").toString();
+          const crown = i === 0 ? "👑" : i + 1;
+          const name = p.name && p.name.trim() !== "" ? p.name : "لاعب"; // تأكد إن الاسم موجود
           const score = p.score || 0;
           const pct = Math.min(
             100,
@@ -864,12 +845,14 @@
           leaderList.appendChild(li);
         });
 
-        // أعلى نقاط للفائزين
-        const highestScore = arr.length ? arr[0].score : 0;
-        const winners = arr.filter((p) => p.score === highestScore);
-        topBadge.innerText =
-          winners.map((p) => p.name || "لاعب").join(" و ") +
-          ` (${highestScore})`;
+        // أعلى لاعب
+        if (arr.length) {
+          const topName =
+            arr[0].name && arr[0].name.trim() !== "" ? arr[0].name : "لاعب";
+          topBadge.innerText = `${topName} (${arr[0].score || 0})`;
+        } else {
+          topBadge.innerText = "—";
+        }
       }
 
       /* ========== إنهاء الجولة + إعلان الفائز الحقيقي ========== */
