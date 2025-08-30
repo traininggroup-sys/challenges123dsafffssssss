@@ -386,15 +386,7 @@
           <div class="sub" id="topicLabel">المحور: عام</div>
         </div>
         <div class="sub">الحالة: <span id="statusShort">في انتظار</span></div>
-        <span
-          id="adminIcon"
-          style="
-            cursor: pointer;
-            font-size: 18px;
-            margin-right: 10px;
-            display: inline-block;
-          "
-          >⚙️</span
+
         >
       </header>
 
@@ -517,7 +509,6 @@
         <button id="backToHomeBtn" class="btn" style="margin-top: 20px">
           الرجوع للشاشة الرئيسية
         </button>
-        <button id="openBtn" style="display: none">فتح المسابقة</button>
       </div>
 
       <div id="winnerPopup">
@@ -563,7 +554,6 @@
           حسناً
         </button>
       </div>
-      <button id="stopBtn" style="display: none">إيقاف المسابقة</button>
 
       <footer>© جروب أسئلة الجهاز المركزي</footer>
     </div>
@@ -1307,56 +1297,6 @@
         // مثلا: منع ارسال اجابات جديدة + اعلان النتيجة
         clearTimeout(contestTimer);
       }
-      /* عناصر تحكم الأدمن */
-      const stopBtn = document.getElementById("stopBtn");
-      const openBtn = document.getElementById("openBtn");
-      const adminIcon = document.getElementById("adminIcon");
-
-      /* افتراضيًا مخفي */
-      stopBtn.style.display = "none";
-      openBtn.style.display = "none";
-
-      /* الضغط على الأيقونة */
-      adminIcon.addEventListener("click", () => {
-        let pass = prompt("🔑 كلمة مرور الأدمن:");
-        if (pass === "1234") {
-          // غيّري الباسورد اللي يعجبك
-          stopBtn.style.display = "inline-block";
-          openBtn.style.display = "inline-block";
-          alert("✅ أدوات الأدمن اتفعلت");
-        } else {
-          alert("❌ كلمة المرور غير صحيحة");
-        }
-      });
-
-      /* إيقاف المسابقة */
-      stopBtn.addEventListener("click", () => {
-        liveRef.update({ status: "stopped" });
-        alert("⛔ تم إيقاف المسابقة");
-      });
-
-      /* فتح المسابقة */
-      openBtn.addEventListener("click", () => {
-        liveRef.update({ status: "running" });
-        alert("✅ تم تشغيل المسابقة");
-      });
-
-      /* متابعة الحالة (لكل الناس) */
-      liveRef.child("status").on("value", (snap) => {
-        const val = snap.val();
-        if (val === "running") {
-          statusShort.textContent = "شغالة";
-          statusLabel.textContent = "شغالة";
-        } else if (val === "stopped") {
-          statusShort.textContent = "متوقفة";
-          statusLabel.textContent = "متوقفة";
-          // هنا ممكن كمان تعمل show لصفحة النهاية لو حبيتي
-          // document.getElementById("finalPage").classList.add("show");
-        } else {
-          statusShort.textContent = "في انتظار";
-          statusLabel.textContent = "في انتظار";
-        }
-      });
     </script>
   </body>
 </html>
