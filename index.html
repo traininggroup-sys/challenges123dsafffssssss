@@ -507,6 +507,7 @@
         <button id="backToHomeBtn" class="btn" style="margin-top: 20px">
           الرجوع للشاشة الرئيسية
         </button>
+        <button id="openBtn" style="display: none">فتح المسابقة</button>
       </div>
 
       <div id="winnerPopup">
@@ -752,7 +753,7 @@
         },
       ];
 
-      const REQUIRED_PLAYERS = 10; // التجربة تبدأ عند 2
+      const REQUIRED_PLAYERS = 2; // التجربة تبدأ عند 2
       const PER_QUESTION_SECONDS = 15; // 15 ثانية لكل سؤال
 
       /* ========== عناصر واجهة ========== */
@@ -787,7 +788,7 @@
         localIndex = 0,
         questionTimer = null,
         questionDeadline = null,
-        started = true;
+        started = false;
 
       /* ========== أصوات WebAudio (بدون روابط خارجية) ========== */
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -885,7 +886,7 @@
           msg.style.display = "none";
         };
       }
-      let QUIZ_OPEN = false; // لو true المسابقة مفتوحة، لو false مقفولة
+      let QUIZ_OPEN = true; // لو true المسابقة مفتوحة، لو false مقفولة
 
       joinBtn.addEventListener("click", async () => {
         unlockAudio();
@@ -1296,6 +1297,16 @@
         // مثلا: منع ارسال اجابات جديدة + اعلان النتيجة
         clearTimeout(contestTimer);
       }
+
+      document.getElementById("openBtn").addEventListener("click", () => {
+        QUIZ_OPEN = true;
+        alert("✅ المسابقة اتفتحت");
+      });
+
+      document.getElementById("stopBtn").addEventListener("click", () => {
+        QUIZ_OPEN = false;
+        alert("⛔ المسابقة اتقفلت");
+      });
     </script>
   </body>
 </html>
