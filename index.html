@@ -1298,14 +1298,36 @@
         clearTimeout(contestTimer);
       }
 
-      document.getElementById("openBtn").addEventListener("click", () => {
-        QUIZ_OPEN = true;
-        alert("✅ المسابقة اتفتحت");
+      const stopBtn = document.getElementById("stopBtn");
+      const openBtn = document.getElementById("openBtn");
+
+      // اول ما الصفحة تفتح هيسألك لو عايزة تدخلي كأدمن
+      window.addEventListener("load", () => {
+        const pass = prompt("🔑 كلمة مرور الأدمن (اتركه فاضي لو مش أدمن):");
+        if (pass === "1234") {
+          // هنا حطي كلمة السر اللي انتي عايزاها
+          stopBtn.style.display = "block";
+          openBtn.style.display = "block";
+        }
       });
 
-      document.getElementById("stopBtn").addEventListener("click", () => {
-        QUIZ_OPEN = false;
+      stopBtn.addEventListener("click", () => {
         alert("⛔ المسابقة اتقفلت");
+        // هنا تحطي الكود اللي يقفل المسابقة
+
+        document.getElementById("stopBtn").addEventListener("click", () => {
+          QUIZ_OPEN = false;
+          alert("⛔ المسابقة اتقفلت");
+        });
+      });
+
+      openBtn.addEventListener("click", () => {
+        alert("✅ المسابقة اتفتحت");
+        // هنا تحطي الكود اللي يفتح المسابقة
+        document.getElementById("openBtn").addEventListener("click", () => {
+          QUIZ_OPEN = true;
+          alert("✅ المسابقة اتفتحت");
+        });
       });
     </script>
   </body>
