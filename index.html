@@ -386,6 +386,16 @@
           <div class="sub" id="topicLabel">المحور: عام</div>
         </div>
         <div class="sub">الحالة: <span id="statusShort">في انتظار</span></div>
+        <span
+          id="adminIcon"
+          style="
+            cursor: pointer;
+            font-size: 18px;
+            margin-right: 10px;
+            display: inline-block;
+          "
+          >⚙️</span
+        >
       </header>
 
       <main>
@@ -1297,37 +1307,34 @@
         // مثلا: منع ارسال اجابات جديدة + اعلان النتيجة
         clearTimeout(contestTimer);
       }
-
       const stopBtn = document.getElementById("stopBtn");
       const openBtn = document.getElementById("openBtn");
+      const adminIcon = document.getElementById("adminIcon");
 
-      // اول ما الصفحة تفتح هيسألك لو عايزة تدخلي كأدمن
-      window.addEventListener("load", () => {
-        const pass = prompt("🔑 كلمة مرور الأدمن (اتركه فاضي لو مش أدمن):");
+      // مبدئيًا الأزرار مخفية
+      stopBtn.style.display = "none";
+      openBtn.style.display = "none";
+
+      adminIcon.addEventListener("click", () => {
+        let pass = prompt("🔑 كلمة مرور الأدمن:");
         if (pass === "1234") {
-          // هنا حطي كلمة السر اللي انتي عايزاها
+          // غيّري كلمة السر اللي تعجبك
           stopBtn.style.display = "block";
           openBtn.style.display = "block";
+          alert("✅ تم تفعيل أدوات الأدمن");
+        } else {
+          alert("❌ كلمة المرور غير صحيحة");
         }
       });
 
       stopBtn.addEventListener("click", () => {
+        // هنا الكود اللي يقفل المسابقة
         alert("⛔ المسابقة اتقفلت");
-        // هنا تحطي الكود اللي يقفل المسابقة
-
-        document.getElementById("stopBtn").addEventListener("click", () => {
-          QUIZ_OPEN = false;
-          alert("⛔ المسابقة اتقفلت");
-        });
       });
 
       openBtn.addEventListener("click", () => {
+        // هنا الكود اللي يفتح المسابقة
         alert("✅ المسابقة اتفتحت");
-        // هنا تحطي الكود اللي يفتح المسابقة
-        document.getElementById("openBtn").addEventListener("click", () => {
-          QUIZ_OPEN = true;
-          alert("✅ المسابقة اتفتحت");
-        });
       });
     </script>
   </body>
