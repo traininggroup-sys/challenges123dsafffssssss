@@ -552,6 +552,7 @@
           حسناً
         </button>
       </div>
+      <button id="stopBtn" style="display: none">إيقاف المسابقة</button>
 
       <footer>© جروب أسئلة الجهاز المركزي</footer>
     </div>
@@ -786,7 +787,7 @@
         localIndex = 0,
         questionTimer = null,
         questionDeadline = null,
-        started = false;
+        started = true;
 
       /* ========== أصوات WebAudio (بدون روابط خارجية) ========== */
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
