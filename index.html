@@ -582,6 +582,7 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
       const liveRef = db.ref("liveQuiz");
+      const QUIZ_DURATION = 3 * 60 * 1000; // مدة المسابقة بالمللي ثانية (3 دقائق)
       const playersRef = db.ref("liveQuiz/players");
 
       /* ========== أسئلة (مثال) ========== */
@@ -746,11 +747,7 @@
           opts: ["مطبوخ", "طباخ", "مطبخ", "طابخ"],
           a: 0,
         },
-        {
-          q: "همزة كلمة يجرُأ صح ام خطا :",
-          opts: ["صح", "خطا"],
-          a: 1,
-        },
+        { q: "همزة كلمة يجرُأ صح ام خطا :", opts: ["صح", "خطا"], a: 1 },
         {
           q: "إحدى الكلمات الآتية كُتبت ألفها المقصورة صحيحة:",
           opts: ["تصدا", "افتدى", "لولى", "خبايى"],
@@ -758,7 +755,7 @@
         },
       ];
 
-      const REQUIRED_PLAYERS = 1; // التجربة تبدأ عند 2
+      const REQUIRED_PLAYERS = 1; // التجربة تبدأ عند 1
       const PER_QUESTION_SECONDS = 15; // 15 ثانية لكل سؤال
 
       /* ========== عناصر واجهة ========== */
@@ -795,7 +792,7 @@
         questionDeadline = null,
         started = false;
 
-      /* ========== أصوات WebAudio (بدون روابط خارجية) ========== */
+      /* ========== أصوات WebAudio ========== */
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       let ctx = new AudioCtx();
       let audioUnlocked = false;
@@ -807,28 +804,23 @@
           .catch(() => {});
       }
       document.addEventListener("click", unlockAudio, { once: true });
-      const leaveBtn = document.getElementById("leaveBtn");
 
+      const leaveBtn = document.getElementById("leaveBtn");
       if (leaveBtn) {
         leaveBtn.addEventListener("click", async () => {
           if (playerId) {
             await db.ref(`liveQuiz/players/${playerId}`).remove();
             playerId = null;
             playerName = "";
-            // إرجاع المستخدم لواجهة الترحيب
             quizCard.classList.add("hidden");
             welcomeCard.classList.remove("hidden");
-
-            // إيقاف جميع الأصوات
             stopAllSounds();
           }
         });
       }
 
       window.addEventListener("beforeunload", () => {
-        if (playerId) {
-          db.ref(`liveQuiz/players/${playerId}`).remove();
-        }
+        if (playerId) db.ref(`liveQuiz/players/${playerId}`).remove();
       });
 
       function beep({ freq = 600, type = "sine", ms = 200, gain = 0.06 } = {}) {
@@ -846,6 +838,7 @@
           }, ms);
         } catch (e) {}
       }
+
       const sfx = {
         start: () => beep({ freq: 900, type: "triangle", ms: 200 }),
         correct: () => {
@@ -854,86 +847,69 @@
         },
         wrong: () => beep({ freq: 220, type: "sawtooth", ms: 260 }),
         tick: () => beep({ freq: 520, type: "square", ms: 60, gain: 0.03 }),
-        win: () => {
+        win: () =>
           [880, 990, 1180, 1320].forEach((f, i) =>
             setTimeout(() => beep({ freq: f, type: "sine", ms: 160 }), i * 140)
-          );
-        },
+          ),
       };
       function stopAllSounds() {
         try {
-          // لو في أي Audio بيتشغل، وقفه
-          if (ctx && ctx.state !== "closed") {
-            ctx.suspend(); // يوقف كل الأصوات بدون ما يقفل الـ context
-          }
+          if (ctx && ctx.state !== "closed") ctx.suspend();
         } catch (e) {
-          console.error("Error stopping sounds:", e);
+          console.error(e);
         }
       }
 
       /* ========== انضمام ========== */
-
-      const MAX_PLAYERS = 5; // الحد الأقصى للمتسابقين
-
+      const MAX_PLAYERS = 5;
       function showFullLobbyMessage() {
         const msg = document.getElementById("fullLobbyMsg");
         msg.style.display = "block";
-
-        // إخفاء الرسالة تلقائياً بعد 5 ثواني
         const timeoutId = setTimeout(() => {
           msg.style.display = "none";
         }, 5000);
-
-        // السماح للمستخدم بإغلاق الرسالة يدوياً
         const closeBtn = document.getElementById("closeLobbyMsg");
         closeBtn.onclick = () => {
           clearTimeout(timeoutId);
           msg.style.display = "none";
         };
       }
-      let QUIZ_OPEN = true; // لو true المسابقة مفتوحة، لو false مقفولة
+
+      let QUIZ_OPEN = true;
 
       joinBtn.addEventListener("click", async () => {
         unlockAudio();
-
-        // التحقق هل المسابقة مفتوحة ولا مقفولة
         if (!QUIZ_OPEN) {
           alert("❌ المسابقة مقفولة حاليًا");
           return;
         }
 
-        // جلب عدد المتسابقين الحاليين
         const snap = await playersRef.once("value");
         const currentPlayers = snap.val() || {};
-        const numPlayers = Object.keys(currentPlayers).length;
-
-        if (numPlayers >= MAX_PLAYERS) {
-          showFullLobbyMessage(); // عرض الرسالة بدل alert
+        if (Object.keys(currentPlayers).length >= MAX_PLAYERS) {
+          showFullLobbyMessage();
           return;
         }
 
-        // ✅ التحقق من الاسم إجباري
         const name = (nameInput.value || "").trim();
         if (!name) {
           alert("⚠️ من فضلك أدخل اسمك أولاً");
           return;
         }
-
         playerName = name;
         const key = playersRef.push().key;
         playerId = key;
-
-        await db.ref(`liveQuiz/players/${playerId}`).set({
-          name: playerName,
-          score: 0,
-          currentQuestion: 0,
-          finished: false,
-          joinedAt: Date.now(),
-        });
-
+        await db
+          .ref(`liveQuiz/players/${playerId}`)
+          .set({
+            name: playerName,
+            score: 0,
+            currentQuestion: 0,
+            finished: false,
+            joinedAt: Date.now(),
+          });
         db.ref(`liveQuiz/players/${playerId}`).onDisconnect().remove();
         welcomeCard.classList.add("hidden");
-
         const live = (await liveRef.once("value")).val() || {};
         if (live.status === "started") {
           started = true;
@@ -941,70 +917,69 @@
         }
       });
 
-      /* ========== الترتيب المباشر + بدء تلقائي عند 2 ========== */
+      /* ========== ترتيب مباشر + بدء تلقائي عند العدد المطلوب ========== */
       playersRef.on("value", async (snap) => {
         const data = snap.val() || {};
         const arr = Object.entries(data).map(([id, v]) => ({ id, ...v }));
         playersCount.innerText = arr.length;
-
-        // شريط الانتظار
         const pct = Math.min(
           100,
           Math.round((arr.length / REQUIRED_PLAYERS) * 100)
         );
         waitingProgress.style.width = pct + "%";
         waitingText.innerText = `في انتظار اكتمال العدد — الآن ${arr.length} / ${REQUIRED_PLAYERS}`;
-
-        // ترتيب مباشر
         renderLeaders(arr);
-
-        // لو مفيش لاعبين → reset للحالة
         if (arr.length === 0) {
           await liveRef.set({ status: "waiting" });
           return;
         }
-
-        // ابدأ المسابقة لما نوصل العدد المطلوب (لو مش بدأت)
-        const live = (await liveRef.once("value")).val() || {};
-        if (arr.length >= REQUIRED_PLAYERS && live.status === "waiting") {
-          await liveRef.update({ status: "started", startedAt: Date.now() });
+        if (
+          arr.length >= REQUIRED_PLAYERS &&
+          (await liveRef.once("value")).val().status === "waiting"
+        ) {
+          await liveRef.update({
+            status: "started",
+            startedAt: Date.now(),
+            duration: QUIZ_DURATION,
+          });
         }
       });
 
       /* ========== متابعة حالة الـ Live ========== */
-      // متابعة حالة المسابقة لكل لاعب
       liveRef.on("value", (snap) => {
         const val = snap.val() || {};
         const st = val.status || "waiting";
-
         statusShort.innerText =
           st === "started" ? "بدأت" : st === "ended" ? "انتهت" : "في انتظار";
         statusLabel.innerText = statusShort.innerText;
 
-        // إذا المسابقة بدأت ولم يبدأ اللاعب المحلي بعد
+        if (st === "started" && playerId && !window.centralTimer) {
+          const endTime = val.startedAt + val.duration;
+          window.centralTimer = setInterval(() => {
+            const remain = Math.max(0, endTime - Date.now());
+            const minutes = Math.floor(remain / 60000);
+            const seconds = Math.floor((remain % 60000) / 1000);
+            timeText.innerText = `${minutes}:${seconds
+              .toString()
+              .padStart(2, "0")}`;
+            if (remain <= 0) {
+              clearInterval(window.centralTimer);
+              window.centralTimer = null;
+              endGame();
+            }
+          }, 1000);
+        }
+
         if (st === "started" && !started && playerId) {
           started = true;
           startGame();
         }
-
-        // إعلان الفائز عند نهاية المسابقة لكل اللاعبين
-        if (st === "ended" && val.winnerName) {
+        if (st === "ended" && val.winnerName)
           showWinner(val.winnerName, val.winnerScore);
-
-          // تشغيل confetti و نغمة فوز مرة واحدة لكل لاعب
-          if (!val.celebrated) {
-            confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
-            sfx.win();
-
-            // علم قاعدة البيانات إنه تم الاحتفال
-            liveRef.update({ celebrated: true }).catch(() => {});
-          }
-        }
       });
 
       /* ========== بدء الجولة (لكل عميل) ========== */
       function startGame() {
-        // إعادة تهيئة محلية
         localScore = 0;
         localIndex = 0;
         quizCard.classList.remove("hidden");
@@ -1013,19 +988,17 @@
         renderQuestion();
       }
 
-      /* ========== المؤقت لكل سؤال ========== */
+      /* ========== مؤقت السؤال ========== */
       function startQuestionTimer(totalSec = PER_QUESTION_SECONDS) {
         stopQuestionTimer();
         const endAt = Date.now() + totalSec * 1000;
         questionDeadline = endAt;
-
         questionTimer = setInterval(() => {
           const remain = Math.max(
             0,
             Math.ceil((questionDeadline - Date.now()) / 1000)
           );
           timeText.innerText = remain + " ث";
-          // دائرة
           const elapsed =
             PER_QUESTION_SECONDS * 1000 -
             Math.max(0, questionDeadline - Date.now());
@@ -1037,12 +1010,9 @@
             pct * 3.6
           }deg, #eee ${pct * 3.6}deg)`;
           circleTimer.innerText = remain;
-
           if (remain <= 5 && remain > 0) sfx.tick();
-
           if (remain <= 0) {
             stopQuestionTimer();
-            // بدون إجابة → ينتقل تلقائيًا للسؤال التالي
             nextQuestion();
           }
         }, 200);
@@ -1059,232 +1029,120 @@
       function renderQuestion() {
         feedback.innerText = "";
         doneBox.classList.add("hidden");
-
         if (localIndex >= QUESTIONS.length) {
-          // خلّصنا
           finishLocal();
           return;
         }
-
         const q = QUESTIONS[localIndex];
         questionText.innerText = q.q;
         optionsWrap.innerHTML = "";
-        optionLock = false;
-
-        // تحديث شريط التقدم
-        progressText.innerText = `سؤال ${localIndex + 1} / ${QUESTIONS.length}`;
-        qProgress.style.width =
-          Math.round((localIndex / QUESTIONS.length) * 100) + "%";
-
-        // خيارات (shuffle بسيط)
-        const opts = q.opts
-          .map((o, i) => ({ o, i }))
-          .sort(() => Math.random() - 0.5);
-        opts.forEach(({ o, i }) => {
-          const div = document.createElement("div");
-          div.className = "option";
-          div.innerText = o;
-          div.onclick = async () => {
+        q.opts.forEach((o, i) => {
+          const btn = document.createElement("button");
+          btn.className = "optionBtn";
+          btn.innerText = o;
+          btn.onclick = () => {
             if (optionLock) return;
             optionLock = true;
-
-            if (i === q.a) {
-              div.classList.add("correct");
-              feedback.innerText = "إجابة صحيحة ✅";
-              sfx.correct();
-              await db
-                .ref(`liveQuiz/players/${playerId}/score`)
-                .transaction((s) => (s || 0) + 1);
-            } else {
-              div.classList.add("wrong");
-              feedback.innerText = `خطأ ❌ الإجابة الصحيحة: ${q.opts[q.a]}`;
-              sfx.wrong();
-              // إبراز الصح
-              Array.from(optionsWrap.children).forEach((c) => {
-                if (c.innerText === q.opts[q.a]) c.classList.add("correct");
-              });
-            }
-
-            // حدّث موضع السؤال في قاعدة البيانات (اختياري للعرض)
-            await db
-              .ref(`liveQuiz/players/${playerId}`)
-              .update({ currentQuestion: localIndex + 1 });
-
-            setTimeout(() => nextQuestion(), 900);
+            checkAnswer(i);
           };
-          optionsWrap.appendChild(div);
+          optionsWrap.appendChild(btn);
         });
+        progressText.innerText = `السؤال ${localIndex + 1} من ${
+          QUESTIONS.length
+        }`;
+        qProgress.style.width =
+          Math.round(((localIndex + 1) / QUESTIONS.length) * 100) + "%";
+        startQuestionTimer();
+      }
 
-        // شغّل مؤقت السؤال
-        startQuestionTimer(PER_QUESTION_SECONDS);
+      function checkAnswer(idx) {
+        const correct = QUESTIONS[localIndex].a;
+        const allBtns = optionsWrap.querySelectorAll("button");
+        allBtns.forEach((b, i) => {
+          b.disabled = true;
+          if (i === correct) b.classList.add("correct");
+        });
+        if (idx === correct) {
+          localScore++;
+          feedback.innerText = "✅ صح";
+          sfx.correct();
+        } else {
+          allBtns[idx].classList.add("wrong");
+          feedback.innerText = "❌ غلط";
+          sfx.wrong();
+        }
+        nextQuestion();
       }
 
       function nextQuestion() {
-        stopQuestionTimer();
         localIndex++;
-        renderQuestion();
+        optionLock = false;
+        setTimeout(renderQuestion, 1200);
       }
 
+      /* ========== انهاء لعبة محلية (ارسال النتائج) ========== */
       async function finishLocal() {
         stopQuestionTimer();
-        optionsWrap.innerHTML = "";
-        feedback.innerText = "انتهيت — انتظر النتيجة النهائية";
-        doneBox.classList.remove("hidden");
+        if (playerId) {
+          await playersRef
+            .child(playerId)
+            .update({ score: localScore, finished: true });
+        }
+      }
 
-        // علّم نفسك منتهي
-        if (playerId)
-          await db
-            .ref(`liveQuiz/players/${playerId}`)
-            .update({ finished: true });
-
-        // تحقق إن كان الجميع انتهى → انهي الجولة
+      /* ========== نهاية المسابقة لكل اللاعبين ========== */
+      async function endGame() {
+        stopQuestionTimer();
         const snap = await playersRef.once("value");
         const data = snap.val() || {};
-        const arr = Object.values(data);
-        const allFinished = arr.length > 0 && arr.every((p) => p.finished);
-        if (allFinished) {
-          await liveRef.update({ status: "ended", endedAt: Date.now() });
-          finalize();
-        }
-      }
-
-      /* ========== الترتيب المباشر ========== */
-      function renderLeaders(list) {
-        const arr = list
-          .slice()
-          .sort((a, b) => (b.score || 0) - (a.score || 0));
-        leaderList.innerHTML = "";
-        arr.forEach((p, i) => {
-          const li = document.createElement("li");
-          li.className = "leader";
-          if (i === 0) li.classList.add("rank1");
-          if (i === 1) li.classList.add("rank2");
-          if (i === 2) li.classList.add("rank3");
-
-          const crown = i === 0 ? "👑" : i + 1;
-          const name = (p.name || "لاعب").toString();
-          const score = p.score || 0;
-          const pct = Math.min(
-            100,
-            Math.round((score / Math.max(1, QUESTIONS.length)) * 100)
-          );
-
-          li.innerHTML = `
-                <div class="crown">${crown}</div>
-                <div>
-                  <div>${escapeHtml(name)}</div>
-                  <div class="bar"><i style="width:${pct}%"></i></div>
-                </div>
-                <div>${score} نقطة</div>
-              `;
-          leaderList.appendChild(li);
+        const arr = Object.entries(data).map(([id, v]) => ({
+          id,
+          name: v.name || "لاعب",
+          score: v.score || 0,
+        }));
+        if (!arr.length) return;
+        arr.sort((a, b) => b.score - a.score);
+        const winner = arr[0];
+        await liveRef.update({
+          winnerName: winner.name,
+          winnerScore: winner.score,
+          status: "ended",
+          celebrated: false,
         });
-        topBadge.innerText = arr.length
-          ? `${arr[0].name || "لاعب"} (${arr[0].score || 0})`
-          : "—";
+        setTimeout(async () => {
+          await playersRef.remove();
+          await liveRef.update({ status: "waiting" });
+          welcomeCard.classList.remove("hidden");
+          quizCard.classList.add("hidden");
+          started = false;
+          statusShort.innerText = "في انتظار";
+          statusLabel.innerText = "في انتظار";
+        }, 5000);
       }
-
-      function escapeHtml(s) {
-        return (s || "").toString().replace(
-          /[&<>"']/g,
-          (c) =>
-            ({
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#39;",
-            }[c])
-        );
-      }
-
-      /* ========== إنهاء الجولة + احتفال ========== */
-      async function finalize() {
-        try {
-          const snap = await playersRef.once("value");
-          const data = snap.val() || {};
-          const arr = Object.entries(data).map(([id, v]) => ({
-            id,
-            name: v.name || "لاعب",
-            score: v.score || 0,
-          }));
-
-          if (!arr.length) return;
-
-          // ترتيب اللاعبين حسب النقاط
-          arr.sort((a, b) => b.score - a.score);
-
-          const winner = arr[0];
-          const winnerName = winner.name;
-          const winnerScore = winner.score;
-
-          // تحديث liveRef حتى كل اللاعبين يشوفوا الفائز
-          await liveRef.update({
-            winnerName,
-            winnerScore,
-            status: "ended",
-            announced: false,
-          });
-
-          // تنظيف اللاعبين بعد فترة قصيرة وإعادة المسابقة
-          setTimeout(async () => {
-            await playersRef.remove();
-            await liveRef.update({ status: "waiting" });
-            welcomeCard.classList.remove("hidden");
-            quizCard.classList.add("hidden");
-            started = false;
-            statusShort.innerText = "في انتظار";
-            statusLabel.innerText = "في انتظار";
-          }, 5000);
-        } catch (e) {
-          console.error("Error in finalize:", e);
-        }
-      }
-
-      const winnerPopup = document.getElementById("winnerPopup");
-      const winnerOverlay = document.getElementById("winnerOverlay");
-      const winnerNameEl = document.getElementById("winnerName");
-      const winnerScoreEl = document.getElementById("winnerScore");
-      const closeWinnerBtn = document.getElementById("closeWinnerPopup");
 
       function showWinner(name, score) {
-        winnerNameEl.innerText = name;
-        winnerScoreEl.innerText = score + " نقطة";
-        winnerOverlay.classList.add("show");
-        winnerPopup.classList.add("show");
+        finalPage.classList.remove("hidden");
+        finalPage.innerHTML = `<h2>الفائز: ${name}</h2><p>النقاط: ${score}</p>`;
       }
 
-      // لما المستخدم يضغط اغلاق أو على overlay
-      function hideWinner() {
-        // اخفاء البوكس والـ overlay
-        winnerOverlay.classList.remove("show");
-        winnerPopup.classList.remove("show");
-
-        // عرض صفحة النهاية بعد تأخير قصير
-        setTimeout(() => {
-          finalPage.classList.remove("hidden"); // بدل add("show") استخدم remove("hidden")
-          finalPage.classList.add("show"); // أو خليها add("show") لو عايز أنيميشن
-        }, 300);
+      function renderLeaders(arr) {
+        if (!leaderList) return;
+        const sorted = arr.sort((a, b) => b.score - a.score);
+        leaderList.innerHTML = "";
+        sorted.forEach((p, i) => {
+          const li = document.createElement("li");
+          li.innerText = `${i + 1}. ${p.name} — ${p.score} نقطة`;
+          leaderList.appendChild(li);
+          if (i === 0 && topBadge) li.appendChild(topBadge);
+        });
       }
 
-      // زر الرجوع للشاشة الرئيسية
-      backToHomeBtn.addEventListener("click", () => {
-        // اخفاء صفحة النهاية
-        finalPage.classList.remove("show");
-        finalPage.classList.add("hidden");
-
-        // ارجع للواجهة الرئيسية
-        welcomeCard.classList.remove("hidden");
-        quizCard.classList.add("hidden");
-        started = false;
-        statusShort.innerText = "في انتظار";
-        statusLabel.innerText = "في انتظار";
-      });
-
-      // ربط الأحداث
-      closeWinnerBtn.addEventListener("click", hideWinner);
-      winnerOverlay.addEventListener("click", hideWinner);
-      let contestTimer;
+      if (backToHomeBtn) {
+        backToHomeBtn.onclick = () => {
+          finalPage.classList.add("hidden");
+          welcomeCard.classList.remove("hidden");
+        };
+      }
     </script>
   </body>
 </html>
