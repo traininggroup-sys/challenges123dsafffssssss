@@ -394,8 +394,12 @@
         </div>
         <div class="sub">الحالة: <span id="statusShort">في انتظار</span></div>
       </header>
-      <div id="timer">الوقت: 05:00</div>
 
+      <div id="timer">5:00</div>
+      <div id="questions" style="display: none">
+        <!-- الأسئلة -->
+      </div>
+      <button onclick="startGame()">ابدأ المسابقة</button>
       <main>
         <section>
           <!-- بطاقة الترحيب -->
@@ -1304,33 +1308,43 @@
         clearTimeout(contestTimer);
       }
 
-      // المدة: 5 دقايق = 300 ثانية
-      let timeLeft = 300;
+      let timerDuration = 300; // 5 دقائق = 300 ثانية
+      let timerInterval;
+      let gameStarted = false;
 
-      const timerElement = document.getElementById("timer");
-
-      const countdown = setInterval(() => {
-        let minutes = Math.floor(timeLeft / 60);
-        let seconds = timeLeft % 60;
-
-        // لو الرقم أقل من 10 نخليه 0X
-        minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds;
-
-        // نعرض الوقت
-        timerElement.textContent = `الوقت: ${minutes}:${seconds}`;
-
-        // لما يخلص الوقت
-        if (timeLeft <= 0) {
-          clearInterval(countdown);
-          alert("انتهى الوقت!"); // ممكن تستبدليها بإظهار شاشة النتيجة
-          // هنا ممكن تعملي إخفاء للأسئلة وفتح صفحة النتيجة
-          // document.getElementById("quiz").style.display = "none";
-          // document.getElementById("resultBox").style.display = "block";
+      function startGame() {
+        if (!gameStarted) {
+          gameStarted = true;
+          startTimer();
+          showQuestions(); // هنا تعرضي الأسئلة
         }
+      }
 
-        timeLeft -= 1;
-      }, 1000);
+      function startTimer() {
+        let timeLeft = timerDuration;
+        timerInterval = setInterval(() => {
+          let minutes = Math.floor(timeLeft / 60);
+          let seconds = timeLeft % 60;
+          document.getElementById("timer").textContent = `${minutes}:${
+            seconds < 10 ? "0" : ""
+          }${seconds}`;
+          timeLeft--;
+
+          if (timeLeft < 0) {
+            clearInterval(timerInterval);
+            endGame();
+          }
+        }, 1000);
+      }
+
+      function showQuestions() {
+        document.getElementById("questions").style.display = "block";
+      }
+
+      function endGame() {
+        alert("الوقت انتهى!");
+        // هنا تعملي أي حاجة بعد ما الوقت يخلص
+      }
     </script>
   </body>
 </html>
