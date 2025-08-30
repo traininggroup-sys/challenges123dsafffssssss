@@ -376,6 +376,13 @@
         border-radius: 10px;
         text-align: center;
       }
+      #timer {
+        font-size: 22px;
+        font-weight: bold;
+        color: red;
+        text-align: center;
+        margin: 15px 0;
+      }
     </style>
   </head>
   <body>
@@ -387,6 +394,7 @@
         </div>
         <div class="sub">الحالة: <span id="statusShort">في انتظار</span></div>
       </header>
+      <div id="timer">الوقت: 05:00</div>
 
       <main>
         <section>
@@ -1295,6 +1303,34 @@
         // مثلا: منع ارسال اجابات جديدة + اعلان النتيجة
         clearTimeout(contestTimer);
       }
+
+      // المدة: 5 دقايق = 300 ثانية
+      let timeLeft = 300;
+
+      const timerElement = document.getElementById("timer");
+
+      const countdown = setInterval(() => {
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+
+        // لو الرقم أقل من 10 نخليه 0X
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        // نعرض الوقت
+        timerElement.textContent = `الوقت: ${minutes}:${seconds}`;
+
+        // لما يخلص الوقت
+        if (timeLeft <= 0) {
+          clearInterval(countdown);
+          alert("انتهى الوقت!"); // ممكن تستبدليها بإظهار شاشة النتيجة
+          // هنا ممكن تعملي إخفاء للأسئلة وفتح صفحة النتيجة
+          // document.getElementById("quiz").style.display = "none";
+          // document.getElementById("resultBox").style.display = "block";
+        }
+
+        timeLeft -= 1;
+      }, 1000);
     </script>
   </body>
 </html>
