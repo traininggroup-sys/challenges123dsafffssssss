@@ -1307,34 +1307,55 @@
         // مثلا: منع ارسال اجابات جديدة + اعلان النتيجة
         clearTimeout(contestTimer);
       }
+      /* عناصر تحكم الأدمن */
       const stopBtn = document.getElementById("stopBtn");
       const openBtn = document.getElementById("openBtn");
       const adminIcon = document.getElementById("adminIcon");
 
-      // مبدئيًا الأزرار مخفية
+      /* افتراضيًا مخفي */
       stopBtn.style.display = "none";
       openBtn.style.display = "none";
 
+      /* الضغط على الأيقونة */
       adminIcon.addEventListener("click", () => {
         let pass = prompt("🔑 كلمة مرور الأدمن:");
         if (pass === "1234") {
-          // غيّري كلمة السر اللي تعجبك
-          stopBtn.style.display = "block";
-          openBtn.style.display = "block";
-          alert("✅ تم تفعيل أدوات الأدمن");
+          // غيّري الباسورد اللي يعجبك
+          stopBtn.style.display = "inline-block";
+          openBtn.style.display = "inline-block";
+          alert("✅ أدوات الأدمن اتفعلت");
         } else {
           alert("❌ كلمة المرور غير صحيحة");
         }
       });
 
+      /* إيقاف المسابقة */
       stopBtn.addEventListener("click", () => {
-        // هنا الكود اللي يقفل المسابقة
-        alert("⛔ المسابقة اتقفلت");
+        liveRef.update({ status: "stopped" });
+        alert("⛔ تم إيقاف المسابقة");
       });
 
+      /* فتح المسابقة */
       openBtn.addEventListener("click", () => {
-        // هنا الكود اللي يفتح المسابقة
-        alert("✅ المسابقة اتفتحت");
+        liveRef.update({ status: "running" });
+        alert("✅ تم تشغيل المسابقة");
+      });
+
+      /* متابعة الحالة (لكل الناس) */
+      liveRef.child("status").on("value", (snap) => {
+        const val = snap.val();
+        if (val === "running") {
+          statusShort.textContent = "شغالة";
+          statusLabel.textContent = "شغالة";
+        } else if (val === "stopped") {
+          statusShort.textContent = "متوقفة";
+          statusLabel.textContent = "متوقفة";
+          // هنا ممكن كمان تعمل show لصفحة النهاية لو حبيتي
+          // document.getElementById("finalPage").classList.add("show");
+        } else {
+          statusShort.textContent = "في انتظار";
+          statusLabel.textContent = "في انتظار";
+        }
       });
     </script>
   </body>
