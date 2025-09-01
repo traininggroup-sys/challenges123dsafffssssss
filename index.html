@@ -394,6 +394,13 @@
         </div>
         <div class="sub">الحالة: <span id="statusShort">في انتظار</span></div>
       </header>
+      <div
+        class="sub"
+        id="quizTimer"
+        style="font-weight: bold; font-size: 14px; color: #ffd700"
+      >
+        الوقت المتبقي: --:--
+      </div>
 
       <main>
         <section>
@@ -794,6 +801,42 @@
         questionTimer = null,
         questionDeadline = null,
         started = false;
+      const QUIZ_TOTAL_SECONDS = 180; // 3 دقائق
+      const quizTimerEl = document.getElementById("quizTimer");
+      let quizTimerInterval = null;
+      let quizEndTime = null;
+      function startQuizTimer() {
+        stopQuizTimer();
+        quizEndTime = Date.now() + QUIZ_TOTAL_SECONDS * 1000;
+
+        quizTimerInterval = setInterval(() => {
+          const remainingMs = quizEndTime - Date.now();
+          if (remainingMs <= 0) {
+            stopQuizTimer();
+            quizTimerEl.innerText = "انتهى الوقت";
+            endQuizDueToTime();
+            return;
+          }
+          const remainingSec = Math.floor(remainingMs / 1000);
+          const minutes = Math.floor(remainingSec / 60);
+          const seconds = remainingSec % 60;
+          quizTimerEl.innerText = `الوقت المتبقي: ${minutes
+            .toString()
+            .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+        }, 500);
+      }
+
+      function stopQuizTimer() {
+        if (quizTimerInterval) {
+          clearInterval(quizTimerInterval);
+          quizTimerInterval = null;
+        }
+      }
+
+      async function endQuizDueToTime() {
+        // تحديث الحالة في قاعدة البيانات لإنهاء المسابقة
+        await liveRef.update({ status: "ended", endedAt: Date.now() });
+      }
 
       /* ========== أصوات WebAudio (بدون روابط خارجية) ========== */
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -985,6 +1028,18 @@
         if (st === "started" && !started && playerId) {
           started = true;
           startGame();
+          startQuizTimer(); // بدء المؤقت العام عند بداية المسابقة
+        }
+        if (st === "ended") {
+          stopQuizTimer(); // إيقاف المؤقت العام
+          if (val.winnerName) {
+            showWinner(val.winnerName, val.winnerScore);
+            if (!val.celebrated) {
+              confetti({ particleCount: 250, spread: 80, origin: { y: 0.2 } });
+              sfx.win();
+              liveRef.update({ celebrated: true }).catch(() => {});
+            }
+          }
         }
 
         // إعلان الفائز عند نهاية المسابقة لكل اللاعبين
@@ -1069,7 +1124,7 @@
         const q = QUESTIONS[localIndex];
         questionText.innerText = q.q;
         optionsWrap.innerHTML = "";
-        optionLock = false;
+        optionLock = true;
 
         // تحديث شريط التقدم
         progressText.innerText = `سؤال ${localIndex + 1} / ${QUESTIONS.length}`;
