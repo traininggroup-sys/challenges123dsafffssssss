@@ -537,24 +537,17 @@
         </aside>
       </main>
       <div id="winnerOverlay"></div>
-      <div id="finalPage" class="hidden">
-        <h2>انتهت المسابقة</h2>
-        <p style="margin: 20px 0; font-size: 16px">
-          ولو عايز باقي أهم الأسئلة اضغط على هذا الموقع:
-          <a href="https://final-site-seven.vercel.app/" target="_blank"
-            >final-site-seven.vercel.app</a
-          >
-        </p>
-        <button id="backToHomeBtn" class="btn" style="margin-top: 20px">
-          الرجوع للشاشة الرئيسية
-        </button>
-      </div>
 
       <div id="winnerPopup">
         <h2>🎉 مبروك!</h2>
         <p id="winnerName">—</p>
         <p id="winnerScore">— نقاط</p>
         <button id="closeWinnerPopup">اغلاق</button>
+      </div>
+      <div id="finalPage" class="hidden">
+        <h2>انتهت المسابقة!</h2>
+        <p>شكرا للمشاركة. يمكنك العودة للرئيسية للمشاركة مرة أخرى.</p>
+        <button id="backToHomeBtn">العودة للرئيسية</button>
       </div>
       <!-- ضع هذا في الـ body -->
       <div
@@ -817,8 +810,6 @@
         doneBox = $("#doneBox");
       const leaderList = $("#leaderList"),
         topBadge = $("#topBadge");
-      const finalPage = document.getElementById("finalPage");
-      const backToHomeBtn = document.getElementById("backToHomeBtn");
 
       /* ========== حالة محلية ========== */
       let playerId = null,
@@ -998,7 +989,7 @@
           msg.style.display = "none";
         };
       }
-      let QUIZ_OPEN = false; // لو true المسابقة مفتوحة، لو false مقفولة
+      let QUIZ_OPEN = true; // لو true المسابقة مفتوحة، لو false مقفولة
 
       joinBtn.addEventListener("click", async () => {
         unlockAudio();
@@ -1369,19 +1360,21 @@
         // اخفاء البوكس والـ overlay
         winnerOverlay.classList.remove("show");
         winnerPopup.classList.remove("show");
+        winnerOverlay.style.display = "none";
+        winnerPopup.style.display = "none";
 
         // عرض صفحة النهاية بعد تأخير قصير
         setTimeout(() => {
-          finalPage.classList.remove("hidden"); // بدل add("show") استخدم remove("hidden")
-          finalPage.classList.add("show"); // أو خليها add("show") لو عايز أنيميشن
+          document.getElementById("finalPage").classList.remove("hidden");
+          document.getElementById("finalPage").classList.add("show");
         }, 300);
       }
 
       // زر الرجوع للشاشة الرئيسية
-      backToHomeBtn.addEventListener("click", () => {
+      document.getElementById("backToHomeBtn").addEventListener("click", () => {
         // اخفاء صفحة النهاية
-        finalPage.classList.remove("show");
-        finalPage.classList.add("hidden");
+        document.getElementById("finalPage").classList.remove("show");
+        document.getElementById("finalPage").classList.add("hidden");
 
         // ارجع للواجهة الرئيسية
         welcomeCard.classList.remove("hidden");
