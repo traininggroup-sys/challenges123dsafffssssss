@@ -1098,7 +1098,7 @@
           if (remainingMsInner <= 0) {
             stopQuizTimer();
             quizTimerEl.innerText = "انتهى الوقت";
-            endQuizDueToTime();
+            // Remove automatic end to allow players to continue until all finish
             return;
           }
           const remainingSec = Math.floor(remainingMsInner / 1000);
@@ -1244,7 +1244,7 @@
           msg.style.display = "none";
         };
       }
-      let QUIZ_OPEN = true; // لو true المسابقة مفتوحة، لو false مقفولة
+      let QUIZ_OPEN = false; // لو true المسابقة مفتوحة، لو false مقفولة
 
       joinBtn.addEventListener("click", async () => {
         unlockAudio();
