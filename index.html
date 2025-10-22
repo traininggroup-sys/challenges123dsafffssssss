@@ -1226,25 +1226,7 @@
 
       /* ========== انضمام ========== */
 
-      const MAX_PLAYERS = 5; // الحد الأقصى للمتسابقين
-
-      function showFullLobbyMessage() {
-        const msg = document.getElementById("fullLobbyMsg");
-        msg.style.display = "block";
-
-        // إخفاء الرسالة تلقائياً بعد 5 ثواني
-        const timeoutId = setTimeout(() => {
-          msg.style.display = "none";
-        }, 5000);
-
-        // السماح للمستخدم بإغلاق الرسالة يدوياً
-        const closeBtn = document.getElementById("closeLobbyMsg");
-        closeBtn.onclick = () => {
-          clearTimeout(timeoutId);
-          msg.style.display = "none";
-        };
-      }
-      let QUIZ_OPEN = false; // لو true المسابقة مفتوحة، لو false مقفولة
+      let QUIZ_OPEN = true; // لو true المسابقة مفتوحة، لو false مقفولة
 
       joinBtn.addEventListener("click", async () => {
         unlockAudio();
@@ -1252,16 +1234,6 @@
         // التحقق هل المسابقة مفتوحة ولا مقفولة
         if (!QUIZ_OPEN) {
           alert("❌ المسابقة مقفولة حاليًا");
-          return;
-        }
-
-        // جلب عدد المتسابقين الحاليين
-        const snap = await playersRef.once("value");
-        const currentPlayers = snap.val() || {};
-        const numPlayers = Object.keys(currentPlayers).length;
-
-        if (numPlayers >= MAX_PLAYERS) {
-          showFullLobbyMessage(); // عرض الرسالة بدل alert
           return;
         }
 
