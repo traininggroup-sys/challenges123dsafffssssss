@@ -1040,7 +1040,7 @@
         },
       ];
 
-      const REQUIRED_PLAYERS = 1; // التجربة تبدأ عند 2
+      const REQUIRED_PLAYERS = 2; // التجربة تبدأ عند 2
       const PER_QUESTION_SECONDS = 15; // 15 ثانية لكل سؤال
 
       /* ========== عناصر واجهة ========== */
@@ -1226,7 +1226,7 @@
 
       /* ========== انضمام ========== */
 
-      let QUIZ_OPEN = true; // لو true المسابقة مفتوحة، لو false مقفولة
+      let QUIZ_OPEN = false; // لو true المسابقة مفتوحة، لو false مقفولة
 
       joinBtn.addEventListener("click", async () => {
         unlockAudio();
